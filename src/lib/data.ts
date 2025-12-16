@@ -150,45 +150,40 @@ export const opportunities: Opportunity[] = [
   }
 ];
 
-// Mock data, to be replaced with dynamic data later
-export const alerts = [
+export const alerts: Alert[] = [
   {
     id: 'alert-1',
-    opportunityId: "OPP-00003",
-    opportunityName: 'Security Infrastructure Overhaul',
-    ownerName: 'Laura Schmidt',
-    reason: "Opportunité bloquée depuis 15 jours",
-    severity: "urgent",
+    title: 'Opportunité bloquée',
+    opportunityId: 'OPP-00003',
+    opportunityTitle: 'Security Infrastructure Overhaul',
+    description: 'Opportunité bloquée depuis 15 jours.',
+    timestamp: '2 hours ago',
   },
   {
     id: 'alert-2',
-    opportunityId: "OPP-00002",
-    opportunityName: 'Digital Transformation Consulting',
-    ownerName: 'Luca Moretti',
-    reason: "Marge négative détectée",
-    severity: "warning",
+    title: 'Marge négative',
+    opportunityId: 'OPP-00002',
+    opportunityTitle: 'Digital Transformation Consulting',
+    description: 'Marge négative détectée',
+    timestamp: '1 day ago',
   },
 ];
 
-export const newsFeed = [
+export const newsFeed: NewsEvent[] = [
     {
         id: 'news-1',
-        opportunityId: "OPP-00001",
-        clientName: "Amazon Web Services",
-        ownerName: "Anna Kovács",
-        eventType: "phase_changed",
-        eventName: "Phase passée de Evaluation à Deal",
-        createdAt: "2024-05-23T10:00:00Z"
+        user: users.find(u => u.displayName === 'Anna Kovács')!,
+        action: 'changed the stage to',
+        opportunityTitle: 'Cloud Migration & Infrastructure Upgrade',
+        timestamp: '1 day ago'
     },
     {
         id: 'news-2',
-        opportunityId: "OPP-00004",
-        clientName: "Google Cloud",
-        ownerName: "Elena Rossi",
-        eventType: "status_updated",
-        eventName: "Statut changé en Start",
-        createdAt: "2024-05-23T11:00:00Z"
-    }
+        user: users.find(u => u.displayName === 'Elena Rossi')!,
+        action: 'updated the status to',
+        opportunityTitle: 'AI Analytics Platform',
+        timestamp: '2 days ago'
+    },
 ];
 
 export const salesPipelineData = [

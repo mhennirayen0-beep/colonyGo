@@ -87,23 +87,17 @@ export interface ColonyNote {
 
 export interface Alert {
   id: string;
+  title: string;
   opportunityId: string;
-  opportunityName: string;
-  ownerId: string;
-  ownerName: string;
-  reason: string; // Ex: "Retard sur livraison prévue"
-  severity: 'info' | 'warning' | 'urgent';
-  aiGenerated: boolean;
-  createdAt: Timestamp;
+  opportunityTitle: string;
+  description: string;
+  timestamp: string;
 }
 
 export interface NewsEvent {
   id: string;
-  opportunityId: string;
-  clientName: string;
-  ownerName: string;
-  eventType: 'phase_changed' | 'quote_created' | 'status_updated' | 'note_added';
-  eventName: string; // Ex: "Phase passée en Evaluation"
-  aiGenerated: boolean;
-  createdAt: Timestamp;
+  user: User;
+  action: string;
+  opportunityTitle: string;
+  timestamp: string;
 }

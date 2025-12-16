@@ -20,12 +20,12 @@ export function NewsFeed() {
           {newsFeed.map((item) => (
             <div key={item.id} className="flex items-start gap-4">
               <Avatar>
-                <AvatarImage src={item.user.avatarUrl} alt={item.user.name} />
+                <AvatarImage src={item.user.photoURL} alt={item.user.displayName} />
                 <AvatarFallback>{item.user.initials}</AvatarFallback>
               </Avatar>
               <div className="text-sm">
                 <p>
-                  <span className="font-semibold">{item.user.name}</span>{" "}
+                  <span className="font-semibold">{item.user.displayName}</span>{" "}
                   {item.action}{" "}
                   <span className="font-semibold text-primary/90">{item.opportunityTitle}</span>.
                 </p>
