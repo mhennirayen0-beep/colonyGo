@@ -9,7 +9,7 @@ import {
   SidebarMenuButton,
   useSidebar
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Briefcase } from "lucide-react";
+import { LayoutDashboard, Briefcase, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -23,6 +23,11 @@ const menuItems = [
     label: "Opportunities",
     icon: Briefcase,
   },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: Settings
+  }
 ];
 
 export function MainNav({ className }: { className?: string }) {

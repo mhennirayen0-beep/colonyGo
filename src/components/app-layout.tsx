@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Sidebar, SidebarHeader } from '@/components/ui/sidebar';
@@ -10,12 +9,13 @@ import { Input } from './ui/input';
 import { AIAlertsPopover } from './ai/ai-alerts-popover';
 import { AIAssistModal } from './ai/ai-assist-modal';
 import { useSidebar } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
 function Header() {
   const { toggleSidebar, state } = useSidebar();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
-      <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
+       <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
         {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
@@ -40,26 +40,28 @@ function Header() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-    const { state } = useSidebar();
   return (
-      <div className="flex min-h-screen w-full bg-muted/40">
-        <Sidebar>
-          <SidebarHeader>
-             <div className="flex items-center gap-2">
-                <Bot className="h-6 w-6 text-primary" />
-                <h2 className="font-headline text-xl font-semibold text-primary-foreground group-data-[state=collapsed]:hidden">ColonyGo</h2>
-             </div>
-          </SidebarHeader>
-          <MainNav />
-        </Sidebar>
-        <div className="flex flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="mx-auto w-full max-w-7xl">
-              {children}
-            </div>
-          </main>
-        </div>
+    <div className="flex min-h-screen w-full bg-muted/40">
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2">
+            <Bot className="h-6 w-6 text-primary" />
+            <h2
+              className={cn(
+                'font-headline text-xl font-semibold text-primary-foreground',
+                useSidebar().state === 'collapsed' && 'hidden'
+              )}
+            >
+              ColonyGo
+            </h2>
+          </div>
+        </SidebarHeader>
+        <MainNav />
+      </Sidebar>
+      <div className="flex flex-1 flex-col">
+        <Header />
+        {children}
       </div>
+    </div>
   );
 }

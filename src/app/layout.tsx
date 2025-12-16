@@ -28,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("font-body antialiased", fontBody.variable, fontHeadline.variable)}>
+      <body
+        suppressHydrationWarning
+        className={cn("font-body antialiased", fontBody.variable, fontHeadline.variable)}
+      >
         <SidebarProvider>
           {children}
         </SidebarProvider>

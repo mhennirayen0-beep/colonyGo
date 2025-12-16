@@ -131,7 +131,7 @@ const Sidebar = React.forwardRef<
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
             side="left"
-            className="w-64 bg-sidebar-primary p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-64 bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           >
             <div className="flex h-full w-full flex-col">
               {children}
@@ -145,7 +145,7 @@ const Sidebar = React.forwardRef<
         <aside
           ref={ref}
           className={cn(
-            "relative hidden h-screen shrink-0 border-r bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out sm:flex sm:flex-col",
+            "fixed inset-y-0 left-0 z-40 hidden h-screen shrink-0 border-r bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out sm:flex sm:flex-col",
             state === 'expanded' ? 'w-64' : 'w-14',
             className
           )}
@@ -157,7 +157,7 @@ const Sidebar = React.forwardRef<
              {children}
             </div>
             <div className="p-2">
-                 <Button variant="ghost" className="w-full justify-start hover:bg-sidebar-accent bg-green-500 hover:bg-green-600 text-white" onClick={toggleSidebar}>
+                 <Button variant="default" className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground" onClick={toggleSidebar}>
                     {state === 'expanded' ? <PanelLeftClose className="h-4 w-4 mr-2" /> : <PanelLeftOpen className="h-4 w-4"/>}
                     <span className={cn("text-sm", state === 'collapsed' && 'sr-only')}>Collapse</span>
                 </Button>
