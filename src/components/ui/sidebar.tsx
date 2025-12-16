@@ -218,7 +218,7 @@ const Sidebar = React.forwardRef<
           ref={ref}
           className={cn(
             "group fixed top-0 z-40 h-screen -translate-x-full sm:translate-x-0 border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-in-out",
-            state === 'expanded' ? 'w-64' : 'w-14',
+            "w-64 data-[state=collapsed]:w-14",
              className)}
           data-state={state}
           data-collapsible={state === "collapsed" ? collapsible : ""}
@@ -228,7 +228,7 @@ const Sidebar = React.forwardRef<
         >
             <div
                 data-sidebar="sidebar"
-                className="flex h-full w-full flex-col bg-sidebar"
+                className="flex h-full w-full flex-col"
             >
                 {children}
             </div>
