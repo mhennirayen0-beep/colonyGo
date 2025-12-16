@@ -1,10 +1,17 @@
-import type { User, Opportunity, Alert, NewsItem } from './types';
+import type { User, Opportunity, Alert, NewsItem, Client } from './types';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alia Reddy', avatarUrl: 'https://picsum.photos/seed/user1/40/40', initials: 'AR' },
   { id: 'user-2', name: 'Ben Carson', avatarUrl: 'https://picsum.photos/seed/user2/40/40', initials: 'BC' },
   { id: 'user-3', name: 'Chloe Davis', avatarUrl: 'https://picsum.photos/seed/user3/40/40', initials: 'CD' },
   { id: 'user-4', name: 'David Garcia', avatarUrl: 'https://picsum.photos/seed/user4/40/40', initials: 'DG' },
+];
+
+export const clients: Client[] = [
+    { id: 'client-1', name: 'John Doe', email: 'john.doe@innovate.com', company: 'Innovate Corp', avatarUrl: 'https://picsum.photos/seed/client1/40/40', initials: 'JD' },
+    { id: 'client-2', name: 'Jane Smith', email: 'jane.smith@future.tech', company: 'FutureTech Inc.', avatarUrl: 'https://picsum.photos/seed/client2/40/40', initials: 'JS' },
+    { id: 'client-3', name: 'Peter Jones', email: 'peter.jones@synergy.com', company: 'Synergy Solutions', avatarUrl: 'https://picsum.photos/seed/client3/40/40', initials: 'PJ' },
+    { id: 'client-4', name: 'Mary Johnson', email: 'mary.j@pioneer.com', company: 'Pioneer Systems', avatarUrl: 'https://picsum.photos/seed/client4/40/40', initials: 'MJ' },
 ];
 
 export const opportunities: Opportunity[] = [

@@ -9,7 +9,7 @@ import {
   SidebarMenuButton,
   useSidebar
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Briefcase, Settings } from "lucide-react";
+import { LayoutDashboard, Briefcase, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -22,6 +22,11 @@ const menuItems = [
     href: "/opportunities",
     label: "Opportunities",
     icon: Briefcase,
+  },
+  {
+    href: "/clients",
+    label: "Clients",
+    icon: Users,
   },
   {
     href: "/settings",

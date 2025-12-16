@@ -5,6 +5,15 @@ export type User = {
   initials: string;
 };
 
+export type Client = {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  avatarUrl: string;
+  initials: string;
+};
+
 export type Opportunity = {
   id: string;
   title: string;
