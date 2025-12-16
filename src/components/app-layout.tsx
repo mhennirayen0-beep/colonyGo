@@ -4,7 +4,7 @@ import { Sidebar, SidebarHeader } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Button } from './ui/button';
-import { Bot, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
+import { Bot, PanelLeftClose, PanelLeftOpen, Search, Menu } from 'lucide-react';
 import { Input } from './ui/input';
 import { AIAlertsPopover } from './ai/ai-alerts-popover';
 import { AIAssistModal } from './ai/ai-assist-modal';
@@ -16,7 +16,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
        <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
-        {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
+        <Menu />
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
       <div className="relative flex-1 md:grow-0">
@@ -30,7 +30,7 @@ function Header() {
         />
       </div>
       <div className="flex-1">
-        <h1 className="hidden font-headline text-lg font-semibold text-primary/80 md:block">
+        <h1 className="hidden font-headline text-lg font-semibold text-primary md:block">
           ColonyGo Sales Navigator
         </h1>
       </div>
@@ -50,10 +50,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
+            <Bot className="h-6 w-6 text-sidebar-primary" />
             <h2
               className={cn(
-                'font-headline text-xl font-semibold text-primary-foreground',
+                'font-headline text-xl font-semibold text-sidebar-foreground',
                 state === 'collapsed' && 'hidden'
               )}
             >

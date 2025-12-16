@@ -1,50 +1,109 @@
-export type User = {
-  id: string;
-  name: string;
-  avatarUrl: string;
-  initials: string;
-};
+import type { Timestamp } from 'firebase/firestore';
 
-export type Client = {
-  id: string;
-  name: string;
+export interface User {
+  uid: string;
+  displayName: string;
   email: string;
+  role: 'admin' | 'sales' | 'manager';
+  photoURL?: string;
+  createdAt?: Timestamp; // Making optional for mock data
+  initials?: string; // For UI avatar fallback
+}
+
+export interface Customer {
+  id: string; // Format: CS-AWS-001
+  name: string; // Ex: "Amazon Web Services"
   company: string;
-  avatarUrl: string;
-  initials: string;
-};
+  email?: string;
+  phone?: string;
+  sector?: string;
+  category?: string;
+  createdAt?: Timestamp;
+  avatarUrl?: string;
+  initials?: string;
+}
 
-export type Opportunity = {
-  id: string;
-  title: string;
-  client: string;
-  value: number;
-  stage: 'Discovery' | 'Proposal' | 'Negotiation' | 'Won' | 'Lost';
-  owner: User;
-  lastUpdate: string;
-  products: string[];
-};
+export interface Opportunity {
+  id: string; // Format: OPP-00001
+  opportunityname: string;
+  opportunitydescription: string;
+  
+  customerid: string; // Format: CS-AWS-001
+  customername: string;
+  
+  opportunitystatut: 'Forecast' | 'Start' | 'Stop' | 'Cancelled';
+  opportunityphase: 'Prospection' | 'Discovery' | 'Evaluation' | 'Deal';
+  
+  hardware_price: number;
+  software_price: number;
+  service_price: number;
+  
+  opportunityowner: string;
+  
+  swot_strength: number;
+  swot_weakness: number;
+  swot_opportunities: number;
+  swot_threats: number;
+  
+  value_forecast: number;
+  value_final: number;
+  value_discount: number;
+  value_budget: number;
+  value_customer: number;
+  value_bonus: number;
+  
+  opportunityscl: string; // Ex: "Technical Acceptance Payment:31%; Design Approval Payment:69%"
+  
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  createdBy?: string;
 
-export type Alert = {
+  // For UI convenience
+  ownerDetails?: User;
+}
+
+export interface ColonyFile {
+  fileid: string;
+  filename: string;
+  fileuploaddate: Timestamp;
+  fileref: string; // Reference module (opportunityid, projectid, etc.)
+  filetype: string; // Ex: "pdf", "docx"
+  fileurl: string; // Firebase Storage URL
+  uploadedBy: string;
+  index_short?: string; // Preview/description courte
+}
+
+export interface ColonyNote {
+  noteid: string;
+  notestatement: string; // Contenu de la note
+  notecycle: 'Opportunity' | 'Project';
+  noteref: string; // opportunityid ou projectid
+  notetype: 'Action' | 'Decision' | 'Information' | 'Risk';
+  noteowner: string; // User concerné
+  notecreator: string; // User créateur
+  noteduedate?: Timestamp;
+  createdAt: Timestamp;
+}
+
+export interface Alert {
   id: string;
-  title: string;
-  description: string;
   opportunityId: string;
-  opportunityTitle: string;
-  timestamp: string;
-};
+  opportunityName: string;
+  ownerId: string;
+  ownerName: string;
+  reason: string; // Ex: "Retard sur livraison prévue"
+  severity: 'info' | 'warning' | 'urgent';
+  aiGenerated: boolean;
+  createdAt: Timestamp;
+}
 
-export type NewsItem = {
+export interface NewsEvent {
   id: string;
-  user: User;
-  action: string;
-  opportunityTitle: string;
-  timestamp: string;
-};
-
-export type MeetingNote = {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-};
+  opportunityId: string;
+  clientName: string;
+  ownerName: string;
+  eventType: 'phase_changed' | 'quote_created' | 'status_updated' | 'note_added';
+  eventName: string; // Ex: "Phase passée en Evaluation"
+  aiGenerated: boolean;
+  createdAt: Timestamp;
+}

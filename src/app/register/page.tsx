@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function SignInPage() {
+export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="mx-auto max-w-sm">
@@ -24,13 +25,22 @@ export function SignInPage() {
               ColonyGo
             </h1>
           </div>
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
           <CardDescription>
-            Enter your credentials to access your sales dashboard.
+            Enter your details to get started.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
+             <div className="grid gap-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                required
+              />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -41,31 +51,19 @@ export function SignInPage() {
               />
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline text-blue-500"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
               <Input id="password" type="password" required />
             </div>
             <Button asChild type="submit" className="w-full" variant="accent">
               <Link href="/dashboard">
-                <LogIn className="mr-2" />
-                Sign in
+                Create Account
               </Link>
-            </Button>
-            <Button variant="outline" className="w-full">
-              Sign in with Google
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="underline text-blue-500">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/" className="underline text-blue-500">
+              Sign In
             </Link>
           </div>
         </CardContent>

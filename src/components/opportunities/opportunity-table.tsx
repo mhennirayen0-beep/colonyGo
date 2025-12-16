@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -38,12 +37,18 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-const stageVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-  Discovery: "outline",
-  Proposal: "secondary",
-  Negotiation: "default",
-  Won: "secondary",
-  Lost: "destructive"
+const phaseVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+  Prospection: "outline",
+  Discovery: "secondary",
+  Evaluation: "default",
+  Deal: "outline",
+};
+
+const statusColor: { [key: string]: string } = {
+  Forecast: "bg-status-forecast text-white",
+  Start: "bg-status-start text-white",
+  Stop: "bg-status-stop text-white",
+  Cancelled: "bg-status-cancelled text-white",
 };
 
 interface OpportunityTableProps {
@@ -64,7 +69,8 @@ export function OpportunityTable({ onEdit }: OpportunityTableProps) {
               <TableHead>Opportunity</TableHead>
               <TableHead>Client</TableHead>
               <TableHead className="text-right">Value</TableHead>
-              <TableHead>Stage</TableHead>
+              <TableHead>Phase</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Owner</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
@@ -72,21 +78,26 @@ export function OpportunityTable({ onEdit }: OpportunityTableProps) {
           <TableBody>
             {opportunities.map((opp) => (
               <TableRow key={opp.id}>
-                <TableCell className="font-medium">{opp.title}</TableCell>
-                <TableCell>{opp.client}</TableCell>
-                <TableCell className="text-right">{formatCurrency(opp.value)}</TableCell>
+                <TableCell className="font-medium">{opp.opportunityname}</TableCell>
+                <TableCell>{opp.customername}</TableCell>
+                <TableCell className="text-right">{formatCurrency(opp.value_forecast)}</TableCell>
                 <TableCell>
-                  <Badge variant={stageVariant[opp.stage]} className={opp.stage === 'Won' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}>
-                    {opp.stage}
+                  <Badge variant={phaseVariant[opp.opportunityphase]}>
+                    {opp.opportunityphase}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={statusColor[opp.opportunitystatut]}>
+                    {opp.opportunitystatut}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={opp.owner.avatarUrl} alt={opp.owner.name} />
-                      <AvatarFallback>{opp.owner.initials}</AvatarFallback>
+                      <AvatarImage src={opp.ownerDetails?.photoURL} alt={opp.opportunityowner} />
+                      <AvatarFallback>{opp.ownerDetails?.initials}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">{opp.owner.name}</span>
+                    <span className="text-sm">{opp.opportunityowner}</span>
                   </div>
                 </TableCell>
                 <TableCell>

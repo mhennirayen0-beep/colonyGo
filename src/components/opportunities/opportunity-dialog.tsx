@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from 'react';
@@ -33,12 +32,14 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Opportunity } from '@/lib/types';
+import { customers } from '@/lib/data';
 
 const opportunitySchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  client: z.string().min(1, 'Client is required'),
-  value: z.coerce.number().min(0, 'Value must be a positive number'),
-  stage: z.enum(['Discovery', 'Proposal', 'Negotiation', 'Won', 'Lost']),
+  opportunityname: z.string().min(1, 'Name is required'),
+  customerid: z.string().min(1, 'Client is required'),
+  value_forecast: z.coerce.number().min(0, 'Value must be a positive number'),
+  opportunityphase: z.enum(['Prospection', 'Discovery', 'Evaluation', 'Deal']),
+  opportunitystatut: z.enum(['Forecast', 'Start', 'Stop', 'Cancelled']),
 });
 
 type OpportunityFormValues = z.infer<typeof opportunitySchema>;
@@ -59,26 +60,27 @@ export function OpportunityDialog({
   const { toast } = useToast();
   const form = useForm<OpportunityFormValues>({
     resolver: zodResolver(opportunitySchema),
-    defaultValues: {
-      title: '',
-      client: '',
-      value: 0,
-      stage: 'Discovery',
-    },
   });
 
   useEffect(() => {
     if (open) {
-        if (opportunity) {
-          form.reset(opportunity);
-        } else {
-          form.reset({
-            title: '',
-            client: '',
-            value: 0,
-            stage: 'Discovery',
-          });
-        }
+      if (opportunity) {
+        form.reset({
+          opportunityname: opportunity.opportunityname,
+          customerid: opportunity.customerid,
+          value_forecast: opportunity.value_forecast,
+          opportunityphase: opportunity.opportunityphase,
+          opportunitystatut: opportunity.opportunitystatut,
+        });
+      } else {
+        form.reset({
+          opportunityname: '',
+          customerid: '',
+          value_forecast: 0,
+          opportunityphase: 'Prospection',
+          opportunitystatut: 'Forecast',
+        });
+      }
     }
   }, [opportunity, form, open]);
 
@@ -87,7 +89,7 @@ export function OpportunityDialog({
 
     toast({
       title: opportunity ? 'Opportunity Updated' : 'Opportunity Created',
-      description: `${values.title} has been successfully saved.`,
+      description: `${values.opportunityname} has been successfully saved.`,
     });
     
     onFormSubmit();
@@ -106,10 +108,10 @@ export function OpportunityDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
             <FormField
               control={form.control}
-              name="title"
+              name="opportunityname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Opportunity Title</FormLabel>
+                  <FormLabel>Opportunity Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Project Phoenix Deployment" {...field} />
                   </FormControl>
@@ -119,23 +121,32 @@ export function OpportunityDialog({
             />
             <FormField
               control={form.control}
-              name="client"
+              name="customerid"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Client Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Innovate Corp" {...field} />
-                  </FormControl>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a client" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {customers.map(customer => (
+                        <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <FormField
               control={form.control}
-              name="value"
+              name="value_forecast"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Value (USD)</FormLabel>
+                  <FormLabel>Forecast Value (USD)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g., 120000" {...field} />
                   </FormControl>
@@ -145,22 +156,44 @@ export function OpportunityDialog({
             />
             <FormField
               control={form.control}
-              name="stage"
+              name="opportunityphase"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stage</FormLabel>
+                  <FormLabel>Phase</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a stage" />
+                        <SelectValue placeholder="Select a phase" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="Prospection">Prospection</SelectItem>
                       <SelectItem value="Discovery">Discovery</SelectItem>
-                      <SelectItem value="Proposal">Proposal</SelectItem>
-                      <SelectItem value="Negotiation">Negotiation</SelectItem>
-                      <SelectItem value="Won">Won</SelectItem>
-                      <SelectItem value="Lost">Lost</SelectItem>
+                      <SelectItem value="Evaluation">Evaluation</SelectItem>
+                      <SelectItem value="Deal">Deal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="opportunitystatut"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Forecast">Forecast</SelectItem>
+                      <SelectItem value="Start">Start</SelectItem>
+                      <SelectItem value="Stop">Stop</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -173,7 +206,7 @@ export function OpportunityDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit">Save Opportunity</Button>
+            <Button type="submit" variant="accent">Save Opportunity</Button>
           </DialogFooter>
           </form>
         </Form>

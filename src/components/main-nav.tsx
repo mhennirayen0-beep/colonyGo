@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -9,7 +8,7 @@ import {
   SidebarMenuButton,
   useSidebar
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Briefcase, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Briefcase, Settings, Users, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -20,13 +19,18 @@ const menuItems = [
   },
   {
     href: "/opportunities",
-    label: "Opportunities",
+    label: "Sales",
     icon: Briefcase,
   },
   {
-    href: "/clients",
-    label: "Clients",
+    href: "/customers",
+    label: "CRM",
     icon: Users,
+  },
+  {
+    href: "/products",
+    label: "Products",
+    icon: Folder,
   },
   {
     href: "/settings",

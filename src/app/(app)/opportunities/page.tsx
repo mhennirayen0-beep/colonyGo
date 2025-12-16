@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -31,7 +30,7 @@ export default function OpportunitiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-headline font-bold text-primary">Opportunities</h1>
-        <Button onClick={handleNewOpportunity}>
+        <Button onClick={handleNewOpportunity} variant="accent">
           <PlusCircle className="mr-2 h-4 w-4" />
           New Opportunity
         </Button>

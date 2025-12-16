@@ -16,35 +16,33 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
+import { opportunities } from "@/lib/data"
 
-const chartData = [
-  { status: "Won", count: 25, fill: "hsl(var(--primary))" },
-  { status: "Lost", count: 10, fill: "hsl(var(--destructive))" },
-]
 
 const chartConfig = {
   count: {
     label: "Count",
   },
-  Won: {
-    label: "Won",
-    color: "hsl(var(--primary))",
+  Gagnées: {
+    label: "Gagnées",
+    color: "hsl(var(--accent))",
   },
-  Lost: {
-    label: "Lost",
+  Perdues: {
+    label: "Perdues",
     color: "hsl(var(--destructive))",
   },
 }
 
 export function WonLostChart() {
-  const total = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.count, 0)
-  }, [])
+  const chartData = [
+    { status: "Gagnées", count: opportunities.filter(o => o.opportunitystatut === 'Start' || o.opportunitystatut === 'Forecast').length, fill: "var(--color-Gagnées)" },
+    { status: "Perdues", count: opportunities.filter(o => o.opportunitystatut === 'Stop' || o.opportunitystatut === 'Cancelled').length, fill: "var(--color-Perdues)" },
+  ]
 
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="font-headline">Won vs. Lost</CardTitle>
+        <CardTitle className="font-headline">Balance Gagnées vs Perdues</CardTitle>
         <CardDescription>Ratio of won to lost opportunities this quarter</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">

@@ -66,11 +66,17 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        status: {
+          forecast: '#2196C7',
+          start: '#62D26F',
+          stop: '#F59E0B',
+          cancelled: '#EF4444',
+        }
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 6px)',
       },
       keyframes: {
         'accordion-down': {

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -145,7 +144,7 @@ const Sidebar = React.forwardRef<
         <aside
           ref={ref}
           className={cn(
-            "fixed inset-y-0 left-0 z-40 hidden h-screen shrink-0 border-r bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out sm:flex sm:flex-col",
+            "fixed inset-y-0 left-0 z-40 hidden h-screen shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out sm:flex sm:flex-col",
             state === 'expanded' ? 'w-64' : 'w-14',
             className
           )}
@@ -157,7 +156,7 @@ const Sidebar = React.forwardRef<
              {children}
             </div>
             <div className="p-2">
-                 <Button variant="default" className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground" onClick={toggleSidebar}>
+                 <Button variant="accent" className="w-full justify-start text-primary" onClick={toggleSidebar}>
                     {state === 'expanded' ? <PanelLeftClose className="h-4 w-4 mr-2" /> : <PanelLeftOpen className="h-4 w-4"/>}
                     <span className={cn("text-sm", state === 'collapsed' && 'sr-only')}>Collapse</span>
                 </Button>
@@ -205,7 +204,7 @@ const SidebarHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex h-14 items-center border-b border-sidebar-border p-2", className)}
+      className={cn("flex h-14 items-center border-b border-sidebar-border px-4", className)}
       {...props}
     />
   )
