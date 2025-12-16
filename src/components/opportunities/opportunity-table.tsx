@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -109,7 +110,9 @@ export function OpportunityTable({ onEdit }: OpportunityTableProps) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/opportunities/${opp.id}`}>View Details</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onEdit(opp)}>Edit</DropdownMenuItem>
                              <DropdownMenuItem>Add Note</DropdownMenuItem>
                         </DropdownMenuContent>
