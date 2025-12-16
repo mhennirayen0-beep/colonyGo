@@ -47,7 +47,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col sm:gap-4 sm:py-4 transition-all duration-200 ease-in-out sm:pl-14 group-data-[state=expanded]:sm:pl-64">
           <Header />
           <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            <div className="max-w-[1200px] w-full mx-auto">
+            <div className="mx-auto w-full max-w-[1200px]">
               {children}
             </div>
           </main>
