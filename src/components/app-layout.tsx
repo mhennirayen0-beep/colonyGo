@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 function Header() {
   const { toggleSidebar, state } = useSidebar();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
        <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
         {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
         <span className="sr-only">Toggle Sidebar</span>
@@ -40,6 +40,7 @@ function Header() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const { state } = useSidebar();
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
       <Sidebar>
@@ -49,7 +50,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <h2
               className={cn(
                 'font-headline text-xl font-semibold text-primary-foreground',
-                useSidebar().state === 'collapsed' && 'hidden'
+                state === 'collapsed' && 'hidden'
               )}
             >
               ColonyGo
@@ -58,7 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <MainNav />
       </Sidebar>
-      <div className="flex flex-1 flex-col">
+      <div className={cn("flex flex-col flex-1", state === 'expanded' ? 'sm:ml-64' : 'sm:ml-14', "transition-all duration-300 ease-in-out")}>
         <Header />
         {children}
       </div>
