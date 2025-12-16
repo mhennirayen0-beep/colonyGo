@@ -1,55 +1,49 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+"use client";
 
-const products = [
-  { name: 'Hardware Pack A', type: 'Hardware', price: 15000 },
-  { name: 'Software License', type: 'Software', price: 5000 },
-  { name: 'Consulting Service', type: 'Service', price: 10000 },
-]
+import { useState } from "react";
+import { PlusCircle } from "lucide-react";
+import { ProductTable } from "@/components/products/product-table";
+import { ProductDialog } from "@/components/products/product-dialog";
+import { Button } from "@/components/ui/button";
+import type { Product } from "@/lib/types";
 
 export default function ProductsPage() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const handleNewProduct = () => {
+    setSelectedProduct(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setSelectedProduct(null);
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-headline font-bold text-primary">Products</h1>
-       <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Product List</CardTitle>
-          <CardDescription>Manage your company's products and services.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map(product => (
-                <TableRow key={product.name}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.type}</TableCell>
-                  <TableCell className="text-right">${product.price.toLocaleString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-       </Card>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-headline font-bold text-primary">Products</h1>
+        <Button onClick={handleNewProduct} variant="accent">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          New Product
+        </Button>
+      </div>
+      
+      <ProductTable onEdit={handleEditProduct} />
+
+      <ProductDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        product={selectedProduct}
+        onFormSubmit={handleDialogClose}
+      />
     </div>
-  )
+  );
 }

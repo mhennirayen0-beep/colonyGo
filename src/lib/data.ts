@@ -1,4 +1,4 @@
-import type { User, Opportunity, Alert, NewsEvent, Customer } from './types';
+import type { User, Opportunity, Alert, NewsEvent, Customer, Product } from './types';
 
 export const users: User[] = [
   { uid: 'user-1', displayName: 'Anna Kovács', email: 'anna.kovacs@colonygo.com', role: 'sales', photoURL: 'https://picsum.photos/seed/user1/40/40', initials: 'AK' },
@@ -148,6 +148,12 @@ export const opportunities: Opportunity[] = [
     opportunityscl: 'Initial Payment:20%; Final Payment:80%',
     ownerDetails: users.find(u => u.displayName === 'Omar Haddad'),
   }
+];
+
+export const products: Product[] = [
+    { id: 'PROD-HW-001', name: 'Hardware Pack A', type: 'Hardware', price: 15000 },
+    { id: 'PROD-SW-001', name: 'Software License', type: 'Software', price: 5000 },
+    { id: 'PROD-SRV-001', name: 'Consulting Service', type: 'Service', price: 10000 },
 ];
 
 export const alerts: Alert[] = [

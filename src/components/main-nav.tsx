@@ -28,6 +28,11 @@ const menuItems = [
     icon: Users,
   },
   {
+    href: "/clients",
+    label: "Clients",
+    icon: Users,
+  },
+  {
     href: "/products",
     label: "Products",
     icon: Folder,

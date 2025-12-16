@@ -62,6 +62,13 @@ export interface Opportunity {
   ownerDetails?: User;
 }
 
+export interface Product {
+    id: string;
+    name: string;
+    type: 'Hardware' | 'Software' | 'Service';
+    price: number;
+}
+
 export interface ColonyFile {
   fileid: string;
   filename: string;
