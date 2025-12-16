@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 function Header() {
   const { state, toggleSidebar } = useSidebar();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
        <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
         {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
         <span className="sr-only">Toggle Sidebar</span>
@@ -25,8 +25,7 @@ function Header() {
           type="search"
           placeholder="Search..."
           className={cn(
-            'w-full rounded-lg bg-secondary pl-8 transition-all duration-300',
-            state === 'expanded' ? 'md:w-[200px] lg:w-[320px]' : 'md:w-[260px] lg:w-[380px]'
+            'w-full rounded-lg bg-secondary pl-8 transition-all duration-300 md:w-[200px] lg:w-[320px]'
           )}
         />
       </div>
@@ -71,7 +70,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       >
         <Header />
-        {children}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
       </div>
     </div>
   );
