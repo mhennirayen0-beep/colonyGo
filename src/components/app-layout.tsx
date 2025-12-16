@@ -1,16 +1,24 @@
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
+
+'use client';
+
+import { Sidebar, SidebarHeader } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Button } from './ui/button';
-import { Bell, Bot, Search } from 'lucide-react';
+import { Bot, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
 import { Input } from './ui/input';
 import { AIAlertsPopover } from './ai/ai-alerts-popover';
 import { AIAssistModal } from './ai/ai-assist-modal';
+import { useSidebar } from '@/components/ui/sidebar';
 
 function Header() {
+  const { toggleSidebar, state } = useSidebar();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-      <SidebarTrigger className="sm:hidden" />
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
+        {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
       <div className="relative flex-1 md:grow-0">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
@@ -32,27 +40,26 @@ function Header() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+    const { state } = useSidebar();
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex min-h-screen w-full bg-muted/40">
         <Sidebar>
           <SidebarHeader>
              <div className="flex items-center gap-2">
                 <Bot className="h-6 w-6 text-primary" />
-                <h2 className="font-headline text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">ColonyGo</h2>
+                <h2 className="font-headline text-xl font-semibold text-primary-foreground group-data-[state=collapsed]:hidden">ColonyGo</h2>
              </div>
           </SidebarHeader>
           <MainNav />
         </Sidebar>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14 group-data-[state=expanded]:sm:pl-64 transition-all duration-200 ease-in-out">
+        <div className="flex flex-1 flex-col">
           <Header />
-          <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            <div className="mx-auto w-full max-w-[1200px]">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="mx-auto w-full max-w-7xl">
               {children}
             </div>
           </main>
         </div>
       </div>
-    </SidebarProvider>
   );
 }

@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Poppins, Inter } from 'next/font/google';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("font-body antialiased", fontBody.variable, fontHeadline.variable)}>
-        {children}
+        <SidebarProvider>
+          {children}
+        </SidebarProvider>
         <Toaster />
       </body>
     </html>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -6,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +27,7 @@ const menuItems = [
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { state } = useSidebar();
 
   return (
     <nav className={cn("p-2", className)}>
@@ -37,8 +40,8 @@ export function MainNav({ className }: { className?: string }) {
               tooltip={item.label}
             >
               <Link href={item.href}>
-                <item.icon className="h-4 w-4" />
-                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                <item.icon className="h-4 w-4 shrink-0" />
+                <span className={cn(state === 'collapsed' && "hidden")}>{item.label}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

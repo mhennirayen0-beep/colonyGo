@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   Table,
   TableBody,
@@ -24,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import type { Opportunity } from "@/lib/types";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -42,11 +46,11 @@ const stageVariant: { [key: string]: "default" | "secondary" | "destructive" | "
   Lost: "destructive"
 };
 
-const stageColor: { [key: string]: string } = {
-    Won: "bg-green-500",
+interface OpportunityTableProps {
+  onEdit: (opportunity: Opportunity) => void;
 }
 
-export function OpportunityTable() {
+export function OpportunityTable({ onEdit }: OpportunityTableProps) {
   return (
     <Card>
       <CardHeader>
@@ -95,7 +99,7 @@ export function OpportunityTable() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEdit(opp)}>Edit</DropdownMenuItem>
                              <DropdownMenuItem>Add Note</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
