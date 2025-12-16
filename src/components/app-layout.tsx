@@ -12,7 +12,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 function Header() {
-  const { toggleSidebar, state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
        <Button variant="ghost" size="icon" className="sm:hidden" onClick={toggleSidebar}>
@@ -24,11 +24,16 @@ function Header() {
         <Input
           type="search"
           placeholder="Search..."
-          className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
+          className={cn(
+            'w-full rounded-lg bg-secondary pl-8 transition-all duration-300',
+            state === 'expanded' ? 'md:w-[200px] lg:w-[320px]' : 'md:w-[260px] lg:w-[380px]'
+          )}
         />
       </div>
       <div className="flex-1">
-        <h1 className="font-headline text-lg font-semibold text-primary/80 hidden md:block">ColonyGo Sales Navigator</h1>
+        <h1 className="hidden font-headline text-lg font-semibold text-primary/80 md:block">
+          ColonyGo Sales Navigator
+        </h1>
       </div>
       <div className="flex items-center gap-2">
         <AIAssistModal />
@@ -59,7 +64,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <MainNav />
       </Sidebar>
-      <div className={cn("flex flex-col flex-1", state === 'expanded' ? 'sm:ml-64' : 'sm:ml-14', "transition-all duration-300 ease-in-out")}>
+      <div
+        className={cn(
+          'flex flex-1 flex-col transition-all duration-300 ease-in-out',
+          state === 'expanded' ? 'sm:ml-64' : 'sm:ml-14'
+        )}
+      >
         <Header />
         {children}
       </div>
