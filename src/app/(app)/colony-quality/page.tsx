@@ -2,9 +2,12 @@ export default function Page() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="font-headline text-2xl font-semibold text-primary">Colony Quality</h1>
+        <h1 className="font-headline text-2xl font-semibold text-primary">
+          Colony Quality
+        </h1>
         <p className="text-sm text-muted-foreground">
-          This module page exists so the sidebar only contains ColonyGo modules (as requested).
+          This module page exists so the sidebar only contains ColonyGo modules
+          (as requested).
         </p>
       </header>
 
@@ -18,8 +21,6 @@ export default function Page() {
           </div>
           <div className="h-10 w-10 rounded-2xl bg-primary/10" />
         </div>
-
-  
       </div>
     </div>
   );

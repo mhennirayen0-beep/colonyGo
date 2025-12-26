@@ -3,9 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const links = [
-  { title: "Product Wiki", desc: "Specs, workflows, UX patterns, terminology.", href: "https://example.com/wiki" },
-  { title: "Data Catalog", desc: "Data model and variable specification.", href: "https://example.com/data-catalog" },
-  { title: "Support", desc: "Support hub / help center.", href: "https://example.com/support" },
+  {
+    title: "Product Wiki",
+    desc: "Specs, workflows, UX patterns, terminology.",
+    href: "https://example.com/wiki",
+  },
+  {
+    title: "Data Catalog",
+    desc: "Data model and variable specification.",
+    href: "https://example.com/data-catalog",
+  },
+  {
+    title: "Support",
+    desc: "Support hub / help center.",
+    href: "https://example.com/support",
+  },
 ];
 
 export default function NavigatorPage() {

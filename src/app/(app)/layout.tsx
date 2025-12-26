@@ -1,7 +1,6 @@
-'use client';
+import { Suspense } from 'react';
 
-import { AppLayout } from '@/components/app-layout';
-import { OpportunitiesProvider } from '@/lib/opportunities-store';
+import { AppRoutesClientLayout } from './routes-client-layout';
 
 export default function AppRoutesLayout({
   children,
@@ -9,8 +8,8 @@ export default function AppRoutesLayout({
   children: React.ReactNode;
 }) {
   return (
-    <OpportunitiesProvider>
-      <AppLayout>{children}</AppLayout>
-    </OpportunitiesProvider>
+    <Suspense fallback={null}>
+      <AppRoutesClientLayout>{children}</AppRoutesClientLayout>
+    </Suspense>
   );
 }
