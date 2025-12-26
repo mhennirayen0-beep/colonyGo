@@ -33,9 +33,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Opportunity } from '@/lib/types';
 import { customers } from '@/lib/data';
+import { useOpportunitiesStore } from '@/lib/opportunities-store';
 
 const opportunitySchema = z.object({
   opportunityname: z.string().min(1, 'Name is required'),
+  opportunitydescription: z.string().optional(),
   customerid: z.string().min(1, 'Client is required'),
   value_forecast: z.coerce.number().min(0, 'Value must be a positive number'),
   opportunityphase: z.enum(['Prospection', 'Discovery', 'Evaluation', 'Deal']),
@@ -58,6 +60,7 @@ export function OpportunityDialog({
   onFormSubmit,
 }: OpportunityDialogProps) {
   const { toast } = useToast();
+  const { createOpportunity, upsertOpportunity } = useOpportunitiesStore();
   const form = useForm<OpportunityFormValues>({
     resolver: zodResolver(opportunitySchema),
   });
@@ -67,6 +70,7 @@ export function OpportunityDialog({
       if (opportunity) {
         form.reset({
           opportunityname: opportunity.opportunityname,
+          opportunitydescription: opportunity.opportunitydescription ?? '',
           customerid: opportunity.customerid,
           value_forecast: opportunity.value_forecast,
           opportunityphase: opportunity.opportunityphase,
@@ -75,6 +79,7 @@ export function OpportunityDialog({
       } else {
         form.reset({
           opportunityname: '',
+          opportunitydescription: '',
           customerid: '',
           value_forecast: 0,
           opportunityphase: 'Prospection',
@@ -85,7 +90,28 @@ export function OpportunityDialog({
   }, [opportunity, form, open]);
 
   const onSubmit = (values: OpportunityFormValues) => {
-    console.log(values);
+    const customer = customers.find((c) => c.id === values.customerid);
+    if (opportunity) {
+      upsertOpportunity(opportunity.id, {
+        opportunityname: values.opportunityname,
+        opportunitydescription: values.opportunitydescription ?? '',
+        customerid: values.customerid,
+        customername: customer?.name ?? opportunity.customername,
+        value_forecast: values.value_forecast,
+        opportunityphase: values.opportunityphase,
+        opportunitystatut: values.opportunitystatut,
+      });
+    } else {
+      createOpportunity({
+        opportunityname: values.opportunityname,
+        opportunitydescription: values.opportunitydescription ?? '',
+        customerid: values.customerid,
+        customername: customer?.name ?? 'Unknown',
+        value_forecast: values.value_forecast,
+        opportunityphase: values.opportunityphase,
+        opportunitystatut: values.opportunitystatut,
+      });
+    }
 
     toast({
       title: opportunity ? 'Opportunity Updated' : 'Opportunity Created',
@@ -114,6 +140,20 @@ export function OpportunityDialog({
                   <FormLabel>Opportunity Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Project Phoenix Deployment" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="opportunitydescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Short description…" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

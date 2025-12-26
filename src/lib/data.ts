@@ -1,200 +1,201 @@
-import type { User, Opportunity, Alert, NewsEvent, Customer, Product } from './types';
+import type {
+  User,
+  Opportunity,
+  Customer,
+  Product,
+  Alert,
+  NewsEvent,
+  SalesActionRow,
+  SalesAlertRow,
+  SalesNewsRow,
+  RagStatus,
+} from './types';
 
-export const users: User[] = [
-  { uid: 'user-1', displayName: 'Anna Kovács', email: 'anna.kovacs@colonygo.com', role: 'sales', photoURL: 'https://picsum.photos/seed/user1/40/40', initials: 'AK' },
-  { uid: 'user-2', displayName: 'Luca Moretti', email: 'luca.moretti@colonygo.com', role: 'sales', photoURL: 'https://picsum.photos/seed/user2/40/40', initials: 'LM' },
-  { uid: 'user-3', displayName: 'Laura Schmidt', email: 'laura.schmidt@colonygo.com', role: 'sales', photoURL: 'https://picsum.photos/seed/user3/40/40', initials: 'LS' },
-  { uid: 'user-4', displayName: 'Elena Rossi', email: 'elena.rossi@colonygo.com', role: 'sales', photoURL: 'https://picsum.photos/seed/user4/40/40', initials: 'ER' },
-  { uid: 'user-5', displayName: 'Omar Haddad', email: 'omar.haddad@colonygo.com', role: 'manager', photoURL: 'https://picsum.photos/seed/user5/40/40', initials: 'OH' },
-  { uid: 'user-6', displayName: 'Marc Dupont', email: 'marc.dupont@colonygo.com', role: 'admin', photoURL: 'https://picsum.photos/seed/user6/40/40', initials: 'MD' },
-];
+import { excelOpportunities, excelActions, excelAlerts, excelNewsFeed } from './excel-dummydata';
 
-export const customers: Customer[] = [
-    { id: 'CS-AWS-001', name: 'Amazon Web Services', company: 'Amazon Web Services', sector: 'Cloud', avatarUrl: 'https://picsum.photos/seed/client1/40/40', initials: 'AW' },
-    { id: 'CS-CAPG-003', name: 'Capgemini', company: 'Capgemini', sector: 'Consulting', avatarUrl: 'https://picsum.photos/seed/client2/40/40', initials: 'C' },
-    { id: 'CS-BNP-006', name: 'BNP Paribas', company: 'BNP Paribas', sector: 'Finance', avatarUrl: 'https://picsum.photos/seed/client3/40/40', initials: 'BNP' },
-    { id: 'CS-CISCO-007', name: 'Cisco Systems', company: 'Cisco Systems', sector: 'Networking', avatarUrl: 'https://picsum.photos/seed/client4/40/40', initials: 'CS' },
-    { id: 'CS-GCP-013', name: 'Google Cloud', company: 'Google Cloud', sector: 'Cloud', avatarUrl: 'https://picsum.photos/seed/client5/40/40', initials: 'GC' },
-    { id: 'CS-SFR-014', name: 'SFR Business', company: 'SFR Business', sector: 'Telecom', avatarUrl: 'https://picsum.photos/seed/client6/40/40', initials: 'SB' },
-    { id: 'CS-HWE-015', name: 'Huawei Enterprise', company: 'Huawei Enterprise', sector: 'Hardware', avatarUrl: 'https://picsum.photos/seed/client7/40/40', initials: 'HE' },
-    { id: 'CS-OBS-019', name: 'Orange Business Services', company: 'Orange Business Services', sector: 'Telecom', avatarUrl: 'https://picsum.photos/seed/client8/40/40', initials: 'OB' },
-    { id: 'CS-SG-036', name: 'Société Générale', company: 'Société Générale', sector: 'Finance', avatarUrl: 'https://picsum.photos/seed/client9/40/40', initials: 'SG' },
-    { id: 'CS-DELL-045', name: 'Dell Technologies', company: 'Dell Technologies', sector: 'Hardware', avatarUrl: 'https://picsum.photos/seed/client10/40/40', initials: 'DT' },
-];
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => (s[0] ?? '').toUpperCase())
+    .join('') || 'CG';
 
-export const opportunities: Opportunity[] = [
-  {
-    id: 'OPP-00001',
-    opportunityname: 'Cloud Migration & Infrastructure Upgrade',
-    opportunitydescription: 'Full migration of on-premise servers to AWS cloud.',
-    customerid: 'CS-AWS-001',
-    customername: 'Amazon Web Services',
-    opportunitystatut: 'Start',
-    opportunityphase: 'Deal',
-    hardware_price: 50000,
-    software_price: 75000,
-    service_price: 100000,
-    opportunityowner: 'Anna Kovács',
-    swot_strength: 5,
-    swot_weakness: 2,
-    swot_opportunities: 4,
-    swot_threats: 3,
-    value_forecast: 225000,
-    value_final: 220000,
-    value_discount: 5000,
-    value_budget: 250000,
-    value_customer: 230000,
-    value_bonus: 0,
-    opportunityscl: 'Technical Acceptance Payment:50%; Design Approval Payment:50%',
-    ownerDetails: users.find(u => u.displayName === 'Anna Kovács'),
-  },
-  {
-    id: 'OPP-00002',
-    opportunityname: 'Digital Transformation Consulting',
-    opportunitydescription: 'Consulting services for digital strategy.',
-    customerid: 'CS-CAPG-003',
-    customername: 'Capgemini',
-    opportunitystatut: 'Forecast',
-    opportunityphase: 'Discovery',
-    hardware_price: 0,
-    software_price: 20000,
-    service_price: 180000,
-    opportunityowner: 'Luca Moretti',
-    swot_strength: 4,
-    swot_weakness: 3,
-    swot_opportunities: 5,
-    swot_threats: 2,
-    value_forecast: 200000,
-    value_final: 0,
-    value_discount: 0,
-    value_budget: 210000,
-    value_customer: 200000,
-    value_bonus: 0,
-    opportunityscl: 'Design Approval Payment:100%',
-    ownerDetails: users.find(u => u.displayName === 'Luca Moretti'),
-  },
-   {
-    id: 'OPP-00003',
-    opportunityname: 'Security Infrastructure Overhaul',
-    opportunitydescription: 'Network security hardware and software.',
-    customerid: 'CS-CISCO-007',
-    customername: 'Cisco Systems',
-    opportunitystatut: 'Stop',
-    opportunityphase: 'Evaluation',
-    hardware_price: 150000,
-    software_price: 100000,
-    service_price: 50000,
-    opportunityowner: 'Laura Schmidt',
-    swot_strength: 3,
-    swot_weakness: 4,
-    swot_opportunities: 3,
-    swot_threats: 4,
-    value_forecast: 300000,
-    value_final: 0,
-    value_discount: 20000,
-    value_budget: 320000,
-    value_customer: 280000,
-    value_bonus: 0,
-    opportunityscl: 'Technical Acceptance Payment:70%; Design Approval Payment:30%',
-    ownerDetails: users.find(u => u.displayName === 'Laura Schmidt'),
-  },
-   {
-    id: 'OPP-00004',
-    opportunityname: 'AI Analytics Platform',
-    opportunitydescription: 'Deploy Google Cloud AI tools.',
-    customerid: 'CS-GCP-013',
-    customername: 'Google Cloud',
-    opportunitystatut: 'Start',
-    opportunityphase: 'Deal',
-    hardware_price: 10000,
-    software_price: 300000,
-    service_price: 90000,
-    opportunityowner: 'Elena Rossi',
-    swot_strength: 5,
-    swot_weakness: 1,
-    swot_opportunities: 5,
-    swot_threats: 2,
-    value_forecast: 400000,
-    value_final: 400000,
-    value_discount: 0,
-    value_budget: 400000,
-    value_customer: 400000,
-    value_bonus: 10000,
-    opportunityscl: 'Final Payment:100%',
-    ownerDetails: users.find(u => u.displayName === 'Elena Rossi'),
-  },
-   {
-    id: 'OPP-00005',
-    opportunityname: '5G Network Equipment',
-    opportunitydescription: 'New hardware for 5G rollout.',
-    customerid: 'CS-SFR-014',
-    customername: 'SFR Business',
-    opportunitystatut: 'Cancelled',
-    opportunityphase: 'Prospection',
-    hardware_price: 1000000,
-    software_price: 50000,
-    service_price: 150000,
-    opportunityowner: 'Omar Haddad',
-    swot_strength: 2,
-    swot_weakness: 5,
-    swot_opportunities: 2,
-    swot_threats: 5,
-    value_forecast: 1200000,
-    value_final: 0,
-    value_discount: 0,
-    value_budget: 1500000,
-    value_customer: 1200000,
-    value_bonus: 0,
-    opportunityscl: 'Initial Payment:20%; Final Payment:80%',
-    ownerDetails: users.find(u => u.displayName === 'Omar Haddad'),
-  }
-];
+const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
 
+/**
+ * ---- Users (built from sales owners found in Excel dummy data) ----
+ * We keep this compatible with UI components that expect User objects.
+ */
+const ownerNames = uniq([
+  ...excelOpportunities.map((o) => o.opportunityowner),
+  ...excelActions.map((a) => a.salesowner),
+  ...excelAlerts.map((a) => a.salesowner),
+  ...excelNewsFeed.map((n) => n.salesowner),
+]);
+
+export const users: User[] = ownerNames.map((displayName, idx) => ({
+  uid: `user-${idx + 1}`,
+  displayName,
+  email: `${displayName.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '')}@colonygo.com`,
+  role: displayName.toLowerCase().includes('marc') ? 'admin' : 'sales',
+  photoURL: `https://picsum.photos/seed/colonygo-user-${idx + 1}/40/40`,
+  initials: getInitials(displayName),
+}));
+
+/**
+ * ---- Customers (built from Excel dummy data) ----
+ */
+const customerPairs = uniq(excelOpportunities.map((o) => `${o.customerid}|||${o.customername}`));
+export const customers: Customer[] = customerPairs.map((pair, idx) => {
+  const [id, name] = pair.split('|||');
+  return {
+    id,
+    name,
+    company: name,
+    sector: '—',
+    avatarUrl: `https://picsum.photos/seed/colonygo-customer-${idx + 1}/40/40`,
+    initials: getInitials(name),
+  };
+});
+
+const userByName = (name: string) => users.find((u) => u.displayName === name);
+
+/**
+ * Synthetic dates for opportunities (Excel dummy data has no dates).
+ * We spread opportunities over the last 90 days deterministically so Period filters work.
+ */
+const baseOpp = new Date();
+baseOpp.setHours(12, 0, 0, 0);
+
+/**
+ * ---- Opportunities (Excel -> app Opportunity type) ----
+ */
+export const opportunities: Opportunity[] = excelOpportunities.map((r) => ({
+  id: r.opportunityid,
+  createdAtISO: (() => { const d = new Date(baseOpp); d.setDate(d.getDate() - (Number(String(r.opportunityid).replace(/\D/g, '')) || 0) % 90); return d.toISOString(); })(),
+  opportunityname: r.opportunityname,
+  opportunitydescription: r.opportunitydescription,
+  customerid: r.customerid,
+  customername: r.customername,
+  opportunitystatut: r.opportunitystatut as Opportunity['opportunitystatut'],
+  opportunityphase: r.opportunityphase as Opportunity['opportunityphase'],
+  hardware_price: Number(r.hardware_price) || 0,
+  software_price: Number(r.software_price) || 0,
+  service_price: Number(r.service_price) || 0,
+  opportunityowner: r.opportunityowner,
+  swot_strength: Number(r.swot_strength) || 0,
+  swot_weakness: Number(r.swot_weakness) || 0,
+  swot_opportunities: Number(r.swot_opportunities) || 0,
+  swot_threats: Number(r.swot_threats) || 0,
+  value_forecast: Number(r.value_forecast) || 0,
+  value_final: Number(r.value_final) || 0,
+  value_discount: Number(r.value_discount) || 0,
+  value_budget: Number(r.value_budget) || 0,
+  value_customer: Number(r.value_customer) || 0,
+  value_bonus: Number(r.value_bonus) || 0,
+  opportunityscl: String(r.opportunityscl ?? ''),
+  ownerDetails: userByName(r.opportunityowner),
+}));
+
+/**
+ * ---- Sales Management: additional datasets from Excel dummy blocks ----
+ */
+export const salesActions: SalesActionRow[] = excelActions.map((a) => ({
+  opportunityid: a.opportunityid,
+  title: a.title,
+  clientname: a.clientname,
+  currentaction: a.currentaction,
+  salesowner: a.salesowner,
+}));
+
+export const salesAlerts: SalesAlertRow[] = excelAlerts.map((a) => ({
+  opportunityname: a.opportunityname,
+  currentaction: a.currentaction,
+  delay_days: Number(a.delay_days) || 0,
+  salesowner: a.salesowner,
+}));
+
+/**
+ * Excel News Feed has no timestamp; we generate a deterministic timestamp per row
+ * so the UI can sort and apply "Yesterday" vs "Today" grouping.
+ */
+const base = new Date();
+base.setHours(12, 0, 0, 0);
+
+export const salesNewsFeed: SalesNewsRow[] = excelNewsFeed.map((n, idx) => {
+  const d = new Date(base);
+  // spread items over last 12 days deterministically
+  d.setDate(d.getDate() - (idx % 12));
+  return {
+    opportunityid: n.opportunityid,
+    actioncompleted: n.actioncompleted,
+    clientname: n.clientname,
+    salesowner: n.salesowner,
+    timestampISO: d.toISOString(),
+  };
+});
+
+/**
+ * RAG helper
+ * Rule:
+ * - red if delay >= 30 days
+ * - orange if delay >= 15 days
+ * - green otherwise
+ */
+export const ragFromDelay = (delayDays: number): RagStatus => {
+  if (delayDays >= 30) return 'red';
+  if (delayDays >= 15) return 'orange';
+  return 'green';
+};
+
+/**
+ * Derived mapping: link opportunities to alerts (by name match)
+ */
+export const getRagForOpportunityName = (opportunityName: string): RagStatus => {
+  const alert = salesAlerts.find((a) => a.opportunityname === opportunityName);
+  if (!alert) return 'green';
+  return ragFromDelay(alert.delay_days);
+};
+
+/**
+ * ---- Existing exports used by dashboard components (kept compatible) ----
+ * Alerts: reuse Sales Alerts in a simple format.
+ */
+export const alerts: Alert[] = salesAlerts.map((a, idx) => ({
+  id: `alert-${idx + 1}`,
+  title: 'Alerte délai',
+  opportunityId: `unknown-${idx + 1}`,
+  opportunityTitle: a.opportunityname,
+  description: `${a.currentaction} · Delay: ${a.delay_days} days`,
+  timestamp: `${a.delay_days} days`,
+}));
+
+/**
+ * News feed: map to existing NewsEvent type (synthetic).
+ */
+export const newsFeed: NewsEvent[] = salesNewsFeed.map((n, idx) => ({
+  id: `news-${idx + 1}`,
+  user: userByName(n.salesowner) ?? users[0]!,
+  action: n.actioncompleted,
+  opportunityTitle: n.clientname,
+  timestamp: new Date(n.timestampISO).toLocaleDateString(),
+}));
+
+/**
+ * Sales pipeline summary by phase (count).
+ * (Used by existing SalesPipelineChart.)
+ */
+export const salesPipelineData = (['Prospection', 'Discovery', 'Evaluation', 'Deal'] as const).map((phase) => ({
+  name: phase,
+  value: opportunities.filter((o) => o.opportunityphase === phase).length,
+}));
+
+/**
+ * Products kept for other module pages.
+ */
 export const products: Product[] = [
-    { id: 'PROD-HW-001', name: 'Hardware Pack A', type: 'Hardware', price: 15000 },
-    { id: 'PROD-SW-001', name: 'Software License', type: 'Software', price: 5000 },
-    { id: 'PROD-SRV-001', name: 'Consulting Service', type: 'Service', price: 10000 },
-];
-
-export const alerts: Alert[] = [
-  {
-    id: 'alert-1',
-    title: 'Opportunité bloquée',
-    opportunityId: 'OPP-00003',
-    opportunityTitle: 'Security Infrastructure Overhaul',
-    description: 'Opportunité bloquée depuis 15 jours.',
-    timestamp: '2 hours ago',
-  },
-  {
-    id: 'alert-2',
-    title: 'Marge négative',
-    opportunityId: 'OPP-00002',
-    opportunityTitle: 'Digital Transformation Consulting',
-    description: 'Marge négative détectée',
-    timestamp: '1 day ago',
-  },
-];
-
-export const newsFeed: NewsEvent[] = [
-    {
-        id: 'news-1',
-        user: users.find(u => u.displayName === 'Anna Kovács')!,
-        action: 'changed the stage to',
-        opportunityTitle: 'Cloud Migration & Infrastructure Upgrade',
-        timestamp: '1 day ago'
-    },
-    {
-        id: 'news-2',
-        user: users.find(u => u.displayName === 'Elena Rossi')!,
-        action: 'updated the status to',
-        opportunityTitle: 'AI Analytics Platform',
-        timestamp: '2 days ago'
-    },
-];
-
-export const salesPipelineData = [
-  { name: 'Prospection', value: 1 },
-  { name: 'Discovery', value: 1 },
-  { name: 'Evaluation', value: 1 },
-  { name: 'Deal', value: 2 },
+  { id: 'PROD-HW-001', name: 'Hardware Pack', type: 'Hardware', price: 15000 },
+  { id: 'PROD-SW-001', name: 'Software License', type: 'Software', price: 5000 },
+  { id: 'PROD-SRV-001', name: 'Service', type: 'Service', price: 10000 },
 ];

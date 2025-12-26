@@ -25,6 +25,7 @@ export interface Customer {
 
 export interface Opportunity {
   id: string; // Format: OPP-00001
+  createdAtISO?: string; // Synthetic (from dummydata) to enable period filtering
   opportunityname: string;
   opportunitydescription: string;
   
@@ -108,3 +109,59 @@ export interface NewsEvent {
   opportunityTitle: string;
   timestamp: string;
 }
+
+// ---- Excel Dummydata types (Sales Management) ----
+
+export type OpportunityStatus = 'Forecast' | 'Start' | 'Stop' | 'Cancelled';
+export type OpportunityPhase = 'Prospection' | 'Discovery' | 'Evaluation' | 'Deal';
+
+export type ExcelOpportunityRow = {
+  opportunityid: string;
+  opportunityname: string;
+  opportunitydescription: string;
+  customerid: string;
+  customername: string;
+  opportunitystatut: OpportunityStatus;
+  hardware_price: number;
+  software_price: number;
+  service_price: number;
+  opportunityphase: OpportunityPhase;
+  opportunityowner: string;
+  swot_strength: number;
+  swot_weakness: number;
+  swot_opportunities: number;
+  swot_threats: number;
+  value_forecast: number;
+  value_final: number;
+  value_discount: number;
+  value_budget: number;
+  value_customer: number;
+  value_bonus: number;
+  opportunityscl: string;
+};
+
+export type SalesActionRow = {
+  opportunityid: string;
+  title: string;
+  clientname: string;
+  currentaction: string;
+  salesowner: string;
+};
+
+export type SalesAlertRow = {
+  opportunityname: string;
+  currentaction: string;
+  delay_days: number;
+  salesowner: string;
+};
+
+export type SalesNewsRow = {
+  opportunityid: string;
+  actioncompleted: string;
+  clientname: string;
+  salesowner: string;
+  /** synthetic timestamp (ISO) used for UI ordering */
+  timestampISO: string;
+};
+
+export type RagStatus = 'green' | 'orange' | 'red';
