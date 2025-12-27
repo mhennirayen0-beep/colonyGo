@@ -1,16 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-
-import { customers, users } from '@/lib/data';
 import { useOpportunitiesStore } from '@/lib/opportunities-store';
 import type { Opportunity } from '@/lib/types';
+import { useCustomers } from '@/hooks/use-customers';
+import { useAbility } from '@/lib/ability';
+import { useToast } from '@/hooks/use-toast';
+import { useCustomers } from '@/hooks/use-customers';
+import { useAbility } from '@/lib/ability';
+import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 
@@ -94,19 +98,21 @@ export default function OpportunityDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
 
-  const { getOpportunityById } = useOpportunitiesStore();
+  const { toast } = useToast();
+  const ability = useAbility();
+  const { customers } = useCustomers();
+  const { getOpportunityById, fetchOpportunityById, loading } = useOpportunitiesStore();
   const opportunity = getOpportunityById(params.id);
+
+  useEffect(() => {
+    if (params.id && !opportunity) {
+      fetchOpportunityById(params.id).catch(() => void 0);
+    }
+  }, [params.id, opportunity, fetchOpportunityById]);
 
   const [editOpen, setEditOpen] = useState(false);
 
-  const customer = useMemo(
-    () => customers.find((c) => c.id === opportunity?.customerid),
-    [opportunity?.customerid]
-  );
-  const owner = useMemo(
-    () => users.find((u) => u.displayName === opportunity?.opportunityowner),
-    [opportunity?.opportunityowner]
-  );
+  const customer = useMemo(() => customers.find((c) => c.id === opportunity?.customerid), [customers, opportunity?.customerid]);
 
   const computed = useMemo(() => {
     if (!opportunity) return null;
@@ -122,6 +128,26 @@ export default function OpportunityDetailPage() {
       swotAvg,
     };
   }, [opportunity]);
+
+  if (!opportunity && loading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => router.push('/opportunities')}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+        </div>
+        <Card className="rounded-2xl shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-headline">Loading…</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Fetching opportunity details…</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!opportunity) {
     return (
@@ -157,7 +183,17 @@ export default function OpportunityDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <Button
+            variant="outline"
+            disabled={!ability.can('update', 'Opportunity')}
+            onClick={() => {
+              if (!ability.can('update', 'Opportunity')) {
+                toast({ title: 'Not allowed', description: 'You do not have permission to edit opportunities.', variant: 'destructive' });
+                return;
+              }
+              setEditOpen(true);
+            }}
+          >
             <Pencil className="mr-2 h-4 w-4" /> Edit
           </Button>
           <Button variant="secondary" asChild>
@@ -241,8 +277,14 @@ export default function OpportunityDetailPage() {
                 value={
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={owner?.photoURL} />
-                      <AvatarFallback>{owner?.initials}</AvatarFallback>
+                      <AvatarFallback>
+                        {String(opportunity.opportunityowner || '—')
+                          .split(' ')
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((p) => p[0]?.toUpperCase())
+                          .join('')}
+                      </AvatarFallback>
                     </Avatar>
                     <span>{opportunity.opportunityowner}</span>
                   </div>

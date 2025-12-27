@@ -4,7 +4,7 @@ import * as React from "react";
 import { Pie, PieChart, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { opportunities } from "@/lib/data";
+import type { Opportunity } from '@/lib/types';
 import { OpportunityDrilldownSheet } from "@/components/dashboard/opportunity-drilldown-sheet";
 
 const chartConfig = {
@@ -22,30 +22,38 @@ const chartConfig = {
 };
 
 function isWon(o: any) {
-  return o.opportunitystatut === "Start" || o.opportunitystatut === "Forecast";
+  return o.opportunitystatut === "Start";
 }
 
 function isLost(o: any) {
   return o.opportunitystatut === "Stop" || o.opportunitystatut === "Cancelled";
 }
 
-export function WonLostChart() {
+export function WonLostChart({
+  opportunities,
+  won,
+  lost,
+}: {
+  opportunities: Opportunity[];
+  won?: number;
+  lost?: number;
+}) {
   const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<"Gagnées" | "Perdues" | null>(null);
 
-  const won = React.useMemo(() => opportunities.filter(isWon), []);
-  const lost = React.useMemo(() => opportunities.filter(isLost), []);
+  const wonOpps = React.useMemo(() => opportunities.filter(isWon), [opportunities]);
+  const lostOpps = React.useMemo(() => opportunities.filter(isLost), [opportunities]);
 
   const chartData = [
-    { status: "Gagnées", count: won.length, fill: "var(--color-Gagnées)" },
-    { status: "Perdues", count: lost.length, fill: "var(--color-Perdues)" },
+    { status: "Gagnées", count: typeof won === 'number' ? won : wonOpps.length, fill: "var(--color-Gagnées)" },
+    { status: "Perdues", count: typeof lost === 'number' ? lost : lostOpps.length, fill: "var(--color-Perdues)" },
   ];
 
   const selectedOpps = React.useMemo(() => {
-    if (selected === "Gagnées") return won;
-    if (selected === "Perdues") return lost;
+    if (selected === "Gagnées") return wonOpps;
+    if (selected === "Perdues") return lostOpps;
     return [];
-  }, [selected, won, lost]);
+  }, [selected, wonOpps, lostOpps]);
 
   const handleSliceClick = (data: any) => {
     const status = data?.status ?? data?.payload?.status;
@@ -88,7 +96,13 @@ export function WonLostChart() {
         onOpenChange={setOpen}
         title={selected ? `Opportunities · ${selected}` : "Opportunities"}
         opportunities={selectedOpps}
-        ctaHref={selected ? `/opportunities?mode=data&status=${encodeURIComponent(selected)}` : undefined}
+        ctaHref={
+          selected === 'Gagnées'
+            ? `/opportunities?mode=data&status=${encodeURIComponent('Start')}`
+            : selected === 'Perdues'
+              ? `/opportunities?mode=data&status=${encodeURIComponent('Stop')}`
+              : undefined
+        }
         ctaLabel="Open filtered list"
       />
     </>

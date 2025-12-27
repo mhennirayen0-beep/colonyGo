@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { products } from "@/lib/data";
+import { useAbility } from '@/lib/ability';
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -27,7 +27,11 @@ import {
 import type { Product } from "@/lib/types";
 
 interface ProductTableProps {
+  products: Product[];
   onEdit: (product: Product) => void;
+  onDelete?: (product: Product) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -39,7 +43,8 @@ const formatCurrency = (value: number) => {
     }).format(value);
   };
 
-export function ProductTable({ onEdit }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete, loading, error }: ProductTableProps) {
+  const ability = useAbility();
   return (
     <Card>
       <CardHeader>
@@ -47,6 +52,11 @@ export function ProductTable({ onEdit }: ProductTableProps) {
         <CardDescription>Manage your company's products and services.</CardDescription>
       </CardHeader>
       <CardContent>
+        {error ? (
+          <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
         <Table>
           <TableHeader>
             <TableRow>
@@ -57,7 +67,15 @@ export function ProductTable({ onEdit }: ProductTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-sm text-muted-foreground">Loading…</TableCell>
+              </TableRow>
+            ) : products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-sm text-muted-foreground">No products.</TableCell>
+              </TableRow>
+            ) : products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.type}</TableCell>
@@ -71,8 +89,12 @@ export function ProductTable({ onEdit }: ProductTableProps) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(product)}>Edit</DropdownMenuItem>
-                             <DropdownMenuItem>Delete</DropdownMenuItem>
+                            {ability.can('update', 'Product') ? (
+                              <DropdownMenuItem onClick={() => onEdit(product)}>Edit</DropdownMenuItem>
+                            ) : null}
+                            {onDelete && ability.can('delete', 'Product') ? (
+                              <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive">Delete</DropdownMenuItem>
+                            ) : null}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </TableCell>

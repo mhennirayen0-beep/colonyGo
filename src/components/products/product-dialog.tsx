@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,6 +32,7 @@ import {
   } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Product } from '@/lib/types';
+import { useAbility } from '@/lib/ability';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -46,6 +47,8 @@ interface ProductDialogProps {
   onOpenChange: (open: boolean) => void;
   product: Product | null;
   onFormSubmit: () => void;
+  onCreate: (data: Partial<Product>) => Promise<any>;
+  onUpdate: (id: string, data: Partial<Product>) => Promise<any>;
 }
 
 export function ProductDialog({
@@ -53,8 +56,12 @@ export function ProductDialog({
   onOpenChange,
   product,
   onFormSubmit,
+  onCreate,
+  onUpdate,
 }: ProductDialogProps) {
   const { toast } = useToast();
+  const ability = useAbility();
+  const [saving, setSaving] = useState(false);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
   });
@@ -73,15 +80,27 @@ export function ProductDialog({
     }
   }, [product, form, open]);
 
-  const onSubmit = (values: ProductFormValues) => {
-    console.log(values);
-
-    toast({
-      title: product ? 'Product Updated' : 'Product Created',
-      description: `${values.name} has been successfully saved.`,
-    });
-    
-    onFormSubmit();
+  const onSubmit = async (values: ProductFormValues) => {
+    if (product && !ability.can('update', 'Product')) return;
+    if (!product && !ability.can('create', 'Product')) return;
+    setSaving(true);
+    try {
+      if (product) await onUpdate(product.id, values);
+      else await onCreate(values);
+      toast({
+        title: product ? 'Product Updated' : 'Product Created',
+        description: `${values.name} has been successfully saved.`,
+      });
+      onFormSubmit();
+    } catch (err: any) {
+      toast({
+        title: 'Save failed',
+        description: err?.message ? String(err.message) : 'Could not save product.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -149,7 +168,7 @@ export function ProductDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" variant="accent">Save Product</Button>
+            <Button type="submit" variant="accent" disabled={saving}>{saving ? 'Saving…' : 'Save Product'}</Button>
           </DialogFooter>
           </form>
         </Form>

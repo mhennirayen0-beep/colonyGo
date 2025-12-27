@@ -2,7 +2,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Bot, LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,8 +15,34 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth-context';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { register } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await register(displayName, email, password);
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast({
+        title: 'Registration failed',
+        description: err?.message ? String(err.message) : 'Please check your details.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="mx-auto max-w-sm">
@@ -31,7 +59,7 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <form onSubmit={onSubmit} className="grid gap-4">
              <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -39,6 +67,8 @@ export default function RegisterPage() {
                 type="text"
                 placeholder="John Doe"
                 required
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -48,18 +78,18 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="m@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
-            <Button asChild type="submit" className="w-full" variant="accent">
-              <Link href="/dashboard">
-                Create Account
-              </Link>
+            <Button type="submit" className="w-full" variant="accent" disabled={loading}>
+              Create Account
             </Button>
-          </div>
+          </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/" className="underline text-blue-500">

@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Opportunity } from '@/lib/types';
-import { opportunities as seedOpportunities, customers } from '@/lib/data';
+import { api } from '@/lib/api-client';
 
 export type OpportunityNote = {
   id: string;
@@ -15,134 +15,160 @@ export type OpportunityNote = {
 type OpportunitiesState = {
   opportunities: Opportunity[];
   notesByOpportunityId: Record<string, OpportunityNote[]>;
+  loading: boolean;
 };
 
 type OpportunitiesStore = OpportunitiesState & {
-  upsertOpportunity: (id: string, patch: Partial<Opportunity>) => void;
-  createOpportunity: (patch: Partial<Opportunity>) => Opportunity;
-  addNote: (opportunityId: string, text: string, source?: 'user' | 'ai') => void;
+  reloadOpportunities: () => Promise<void>;
+  fetchOpportunityById: (id: string) => Promise<Opportunity | undefined>;
+  upsertOpportunity: (id: string, patch: Partial<Opportunity>) => Promise<Opportunity>;
+  createOpportunity: (patch: Partial<Opportunity>) => Promise<Opportunity>;
+  addNote: (opportunityId: string, text: string, source?: 'user' | 'ai') => Promise<void>;
+  loadNotesForOpportunity: (opportunityId: string) => Promise<OpportunityNote[]>;
   getOpportunityById: (id: string) => Opportunity | undefined;
   getNotesForOpportunity: (id: string) => OpportunityNote[];
 };
 
-const LS_KEY_OPPS = 'colonygo:opportunities';
-const LS_KEY_NOTES = 'colonygo:opportunity_notes';
-
 const Ctx = createContext<OpportunitiesStore | null>(null);
 
-function safeJsonParse<T>(raw: string | null): T | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
+function mapOpportunity(doc: any): Opportunity {
+  return {
+    id: String(doc?.opportunityId ?? doc?.id ?? ''),
+    createdAtISO: doc?.createdAt ? String(doc.createdAt) : new Date().toISOString(),
+    opportunityname: String(doc?.opportunityName ?? doc?.opportunityname ?? ''),
+    opportunitydescription: String(doc?.opportunityDescription ?? doc?.opportunitydescription ?? ''),
+    customerid: String(doc?.customerId ?? doc?.customerid ?? ''),
+    customername: String(doc?.customerName ?? doc?.customername ?? doc?.customerId ?? ''),
+    opportunitystatut: (doc?.statut ?? doc?.opportunitystatut ?? 'Forecast') as any,
+    opportunityphase: (doc?.phase ?? doc?.opportunityphase ?? 'Prospection') as any,
+    hardware_price: Number(doc?.hardwarePrice ?? doc?.hardware_price ?? 0),
+    software_price: Number(doc?.softwarePrice ?? doc?.software_price ?? 0),
+    service_price: Number(doc?.servicePrice ?? doc?.service_price ?? 0),
+    opportunityowner: String(doc?.opportunityOwner ?? doc?.opportunityowner ?? doc?.ownerUserId ?? '—'),
+    swot_strength: Number(doc?.swotStrength ?? doc?.swot_strength ?? 0),
+    swot_weakness: Number(doc?.swotWeakness ?? doc?.swot_weakness ?? 0),
+    swot_opportunities: Number(doc?.swotOpportunities ?? doc?.swot_opportunities ?? 0),
+    swot_threats: Number(doc?.swotThreats ?? doc?.swot_threats ?? 0),
+    value_forecast: Number(doc?.valueForecast ?? doc?.value_forecast ?? 0),
+    value_final: Number(doc?.valueFinal ?? doc?.value_final ?? 0),
+    value_discount: Number(doc?.valueDiscount ?? doc?.value_discount ?? 0),
+    value_budget: Number(doc?.valueBudget ?? doc?.value_budget ?? 0),
+    value_customer: Number(doc?.valueCustomer ?? doc?.value_customer ?? 0),
+    value_bonus: Number(doc?.valueBonus ?? doc?.value_bonus ?? 0),
+    opportunityscl: String(doc?.opportunityScl ?? doc?.opportunityscl ?? ''),
+  };
 }
 
-function hydrateOpportunityNames(opps: Opportunity[]): Opportunity[] {
-  // Ensure customername is consistent after edits (customerid -> customername)
-  const customerById = new Map(customers.map((c) => [c.id, c.name] as const));
-  return opps.map((o) => ({
-    ...o,
-    customername: customerById.get(o.customerid) ?? o.customername,
-  }));
+function toCreatePayload(patch: Partial<Opportunity>) {
+  return {
+    opportunityName: patch.opportunityname,
+    opportunityDescription: patch.opportunitydescription,
+    customerId: patch.customerid,
+    statut: patch.opportunitystatut,
+    phase: patch.opportunityphase,
+    hardwarePrice: patch.hardware_price,
+    softwarePrice: patch.software_price,
+    servicePrice: patch.service_price,
+    opportunityOwner: patch.opportunityowner,
+    swotStrength: patch.swot_strength,
+    swotWeakness: patch.swot_weakness,
+    swotOpportunities: patch.swot_opportunities,
+    swotThreats: patch.swot_threats,
+    valueForecast: patch.value_forecast,
+    valueFinal: patch.value_final,
+    valueDiscount: patch.value_discount,
+    valueBudget: patch.value_budget,
+    valueCustomer: patch.value_customer,
+    valueBonus: patch.value_bonus,
+    opportunityScl: patch.opportunityscl,
+  };
+}
+
+function mapNote(doc: any): OpportunityNote {
+  return {
+    id: String(doc?.noteId ?? doc?.id ?? doc?._id ?? ''),
+    opportunityId: String(doc?.opportunityId ?? ''),
+    text: String(doc?.text ?? ''),
+    createdAtISO: doc?.createdAt ? String(doc.createdAt) : new Date().toISOString(),
+    source: (doc?.source ?? 'user') as any,
+  };
 }
 
 export function OpportunitiesProvider({ children }: { children: React.ReactNode }) {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(seedOpportunities);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [notesByOpportunityId, setNotesByOpportunityId] = useState<Record<string, OpportunityNote[]>>({});
+  const [loading, setLoading] = useState(true);
 
-  // Load persisted state
-  useEffect(() => {
-    const persistedOpps = safeJsonParse<Opportunity[]>(typeof window !== 'undefined' ? window.localStorage.getItem(LS_KEY_OPPS) : null);
-    if (persistedOpps && Array.isArray(persistedOpps) && persistedOpps.length) {
-      setOpportunities(hydrateOpportunityNames(persistedOpps));
-    }
-
-    const persistedNotes = safeJsonParse<Record<string, OpportunityNote[]>>(
-      typeof window !== 'undefined' ? window.localStorage.getItem(LS_KEY_NOTES) : null
-    );
-    if (persistedNotes && typeof persistedNotes === 'object') {
-      setNotesByOpportunityId(persistedNotes);
+  const reloadOpportunities = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<any>('/opportunities');
+      const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+      setOpportunities(items.map(mapOpportunity));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Persist opportunities
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(LS_KEY_OPPS, JSON.stringify(opportunities));
-  }, [opportunities]);
-
-  // Persist notes
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(LS_KEY_NOTES, JSON.stringify(notesByOpportunityId));
-  }, [notesByOpportunityId]);
+    reloadOpportunities().catch(() => setLoading(false));
+  }, [reloadOpportunities]);
 
   const getOpportunityById = useCallback(
     (id: string) => opportunities.find((o) => o.id === id),
     [opportunities]
   );
 
-  const upsertOpportunity = useCallback((id: string, patch: Partial<Opportunity>) => {
+  const fetchOpportunityById = useCallback(async (id: string) => {
+    const existing = getOpportunityById(id);
+    if (existing) return existing;
+    try {
+      const doc = await api.get<any>(`/opportunities/${encodeURIComponent(id)}`);
+      const mapped = mapOpportunity(doc);
+      setOpportunities((prev) => {
+        if (prev.some((o) => o.id === mapped.id)) return prev;
+        return [mapped, ...prev];
+      });
+      return mapped;
+    } catch {
+      return undefined;
+    }
+  }, [getOpportunityById]);
+
+  const upsertOpportunity = useCallback(async (id: string, patch: Partial<Opportunity>) => {
+    const doc = await api.patch<any>(`/opportunities/${encodeURIComponent(id)}`, toCreatePayload(patch));
+    const mapped = mapOpportunity(doc);
     setOpportunities((prev) => {
-      const idx = prev.findIndex((o) => o.id === id);
-      if (idx < 0) return prev;
-      const updated: Opportunity = { ...prev[idx], ...patch };
+      const idx = prev.findIndex((o) => o.id === mapped.id);
+      if (idx < 0) return [mapped, ...prev];
       const next = [...prev];
-      next[idx] = hydrateOpportunityNames([updated])[0]!;
+      next[idx] = mapped;
       return next;
     });
+    return mapped;
   }, []);
 
-  const createOpportunity = useCallback((patch: Partial<Opportunity>) => {
-    const id = patch.id ?? `OPP-${Date.now()}`;
-    const base: Opportunity = {
-      id,
-      createdAtISO: new Date().toISOString(),
-      opportunityname: patch.opportunityname ?? 'New Opportunity',
-      opportunitydescription: patch.opportunitydescription ?? '',
-      customerid: patch.customerid ?? customers[0]?.id ?? 'CS-UNKNOWN',
-      customername: patch.customername ?? customers[0]?.name ?? 'Unknown',
-      opportunitystatut: (patch.opportunitystatut as Opportunity['opportunitystatut']) ?? 'Forecast',
-      opportunityphase: (patch.opportunityphase as Opportunity['opportunityphase']) ?? 'Prospection',
-      hardware_price: Number(patch.hardware_price ?? 0),
-      software_price: Number(patch.software_price ?? 0),
-      service_price: Number(patch.service_price ?? 0),
-      opportunityowner: patch.opportunityowner ?? '—',
-      swot_strength: Number(patch.swot_strength ?? 0),
-      swot_weakness: Number(patch.swot_weakness ?? 0),
-      swot_opportunities: Number(patch.swot_opportunities ?? 0),
-      swot_threats: Number(patch.swot_threats ?? 0),
-      value_forecast: Number(patch.value_forecast ?? 0),
-      value_final: Number(patch.value_final ?? 0),
-      value_discount: Number(patch.value_discount ?? 0),
-      value_budget: Number(patch.value_budget ?? 0),
-      value_customer: Number(patch.value_customer ?? 0),
-      value_bonus: Number(patch.value_bonus ?? 0),
-      opportunityscl: patch.opportunityscl ?? '',
-      ownerDetails: patch.ownerDetails,
-    };
-
-    const created = hydrateOpportunityNames([base])[0]!;
-    setOpportunities((prev) => [created, ...prev]);
-    return created;
+  const createOpportunity = useCallback(async (patch: Partial<Opportunity>) => {
+    const doc = await api.post<any>('/opportunities', toCreatePayload(patch));
+    const mapped = mapOpportunity(doc);
+    setOpportunities((prev) => [mapped, ...prev]);
+    return mapped;
   }, []);
 
-  const addNote = useCallback((opportunityId: string, text: string, source: 'user' | 'ai' = 'user') => {
-    const note: OpportunityNote = {
-      id: `note-${Date.now()}`,
-      opportunityId,
-      text,
-      createdAtISO: new Date().toISOString(),
-      source,
-    };
+  const loadNotesForOpportunity = useCallback(async (opportunityId: string) => {
+    const res = await api.get<any>(`/notes?opportunityId=${encodeURIComponent(opportunityId)}`);
+    const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+    const mapped = items.map(mapNote);
+    setNotesByOpportunityId((prev) => ({ ...prev, [opportunityId]: mapped }));
+    return mapped;
+  }, []);
+
+  const addNote = useCallback(async (opportunityId: string, text: string, source: 'user' | 'ai' = 'user') => {
+    const created = await api.post<any>('/notes', { opportunityId, text, source });
+    const mapped = mapNote(created);
     setNotesByOpportunityId((prev) => {
       const current = prev[opportunityId] ?? [];
-      return {
-        ...prev,
-        [opportunityId]: [note, ...current],
-      };
+      return { ...prev, [opportunityId]: [mapped, ...current] };
     });
   }, []);
 
@@ -155,18 +181,26 @@ export function OpportunitiesProvider({ children }: { children: React.ReactNode 
     () => ({
       opportunities,
       notesByOpportunityId,
+      loading,
+      reloadOpportunities,
+      fetchOpportunityById,
       upsertOpportunity,
       createOpportunity,
       addNote,
+      loadNotesForOpportunity,
       getOpportunityById,
       getNotesForOpportunity,
     }),
     [
       opportunities,
       notesByOpportunityId,
+      loading,
+      reloadOpportunities,
+      fetchOpportunityById,
       upsertOpportunity,
       createOpportunity,
       addNote,
+      loadNotesForOpportunity,
       getOpportunityById,
       getNotesForOpportunity,
     ]

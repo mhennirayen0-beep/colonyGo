@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer } from '@/lib/types';
+import { useAbility } from '@/lib/ability';
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -41,6 +42,8 @@ interface CustomerDialogProps {
   onOpenChange: (open: boolean) => void;
   customer: Customer | null;
   onFormSubmit: () => void;
+  onCreate: (data: Partial<Customer>) => Promise<any>;
+  onUpdate: (id: string, data: Partial<Customer>) => Promise<any>;
 }
 
 export function CustomerDialog({
@@ -48,8 +51,12 @@ export function CustomerDialog({
   onOpenChange,
   customer,
   onFormSubmit,
+  onCreate,
+  onUpdate,
 }: CustomerDialogProps) {
   const { toast } = useToast();
+  const ability = useAbility();
+  const [saving, setSaving] = useState(false);
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
@@ -75,15 +82,31 @@ export function CustomerDialog({
     }
   }, [customer, form, open]);
 
-  const onSubmit = (values: CustomerFormValues) => {
-    console.log(values);
+  const onSubmit = async (values: CustomerFormValues) => {
+    if (customer && !ability.can('update', 'Customer')) return;
+    if (!customer && !ability.can('create', 'Customer')) return;
 
-    toast({
-      title: customer ? 'Customer Updated' : 'Customer Created',
-      description: `${values.name} has been successfully saved.`,
-    });
-    
-    onFormSubmit();
+    setSaving(true);
+    try {
+      if (customer) {
+        await onUpdate(customer.id, values);
+      } else {
+        await onCreate(values);
+      }
+      toast({
+        title: customer ? 'Customer Updated' : 'Customer Created',
+        description: `${values.name} has been successfully saved.`,
+      });
+      onFormSubmit();
+    } catch (err: any) {
+      toast({
+        title: 'Save failed',
+        description: err?.message ? String(err.message) : 'Could not save customer.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -155,7 +178,9 @@ export function CustomerDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" variant="accent">Save Customer</Button>
+            <Button type="submit" variant="accent" disabled={saving}>
+              {saving ? 'Saving…' : 'Save Customer'}
+            </Button>
           </DialogFooter>
           </form>
         </Form>

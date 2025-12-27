@@ -1,7 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,21 +13,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { users } from "@/lib/data";
 import { User, Settings, LogOut } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 export function UserNav() {
-  const user = users.find(u => u.role === 'admin'); // Mock current user as admin
+  const router = useRouter();
+  const { user, logout } = useAuth();
 
   if (!user) return null;
+
+  const initials = user.displayName
+    ? user.displayName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0]!.toUpperCase())
+        .join('')
+    : 'U';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.photoURL} alt={user.displayName} />
-            <AvatarFallback>{user.initials}</AvatarFallback>
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -36,6 +46,9 @@ export function UserNav() {
             <p className="text-sm font-medium leading-none">{user.displayName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground capitalize">
+              {user.roleName}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -55,11 +68,14 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sign out</span>
-          </Link>
+        <DropdownMenuItem
+          onClick={async () => {
+            await logout();
+            router.push('/');
+          }}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sign out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -23,9 +23,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { users } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/lib/auth-context';
+import { api, setTokens } from '@/lib/api-client';
 
 const profileFormSchema = z.object({
   displayName: z
@@ -41,29 +42,86 @@ const profileFormSchema = z.object({
   bio: z.string().max(160).optional(),
 });
 
+const passwordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm the new password'),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function ProfilePage() {
-  const user = users.find(u => u.role === 'admin'); // Mock current user
+  const { user, refreshMe } = useAuth();
+
+  const initials = (user?.displayName || user?.email || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      displayName: user?.displayName,
-      email: user?.email,
-      bio: "ColonyGo Administrator and Sales Manager."
+      displayName: user?.displayName || '',
+      email: user?.email || '',
+      bio: user?.bio || ""
     },
     mode: 'onChange',
   });
 
-  function onSubmit(data: ProfileFormValues) {
-    toast({
-      title: 'Profile updated!',
-      description: 'Your profile information has been successfully updated.',
-    });
+  const passForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    mode: 'onChange',
+  });
+
+  async function onSubmit(data: ProfileFormValues) {
+    try {
+      const res = await api.patch('/auth/profile', {
+        displayName: data.displayName,
+        email: data.email,
+        bio: data.bio || '',
+      });
+      if ((res as any)?.accessToken && (res as any)?.refreshToken) {
+        // token rotation may happen on profile update
+        setTokens((res as any).accessToken, (res as any).refreshToken);
+      }
+      await refreshMe();
+      toast({ title: 'Profile updated', description: 'Your profile has been saved.' });
+    } catch (e: any) {
+      toast({ title: 'Update failed', description: e?.message ? String(e.message) : undefined, variant: 'destructive' });
+    }
   }
 
-  if (!user) return <div>User not found</div>;
+  async function onChangePassword(data: PasswordFormValues) {
+    try {
+      const res = await api.post('/auth/change-password', {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      if ((res as any)?.accessToken && (res as any)?.refreshToken) {
+        setTokens((res as any).accessToken, (res as any).refreshToken);
+      }
+      await refreshMe();
+      passForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast({ title: 'Password updated', description: 'Your password has been changed.' });
+    } catch (e: any) {
+      toast({ title: 'Password update failed', description: e?.message ? String(e.message) : undefined, variant: 'destructive' });
+    }
+  }
+
+  if (!user) return <div className="text-sm text-muted-foreground">No user session.</div>;
 
   return (
     <div className="space-y-6">
@@ -72,8 +130,8 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user.photoURL} alt={user.displayName} />
-              <AvatarFallback>{user.initials}</AvatarFallback>
+              <AvatarImage src={''} alt={user.displayName} />
+              <AvatarFallback>{initials || '?'}</AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-2xl">{user.displayName}</CardTitle>
@@ -144,6 +202,59 @@ export default function ProfilePage() {
                 )}
               />
               <Button type="submit" variant="accent">Update profile</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+          <CardDescription>Change your password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...passForm}>
+            <form onSubmit={passForm.handleSubmit(onChangePassword)} className="space-y-6">
+              <FormField
+                control={passForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" autoComplete="current-password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" autoComplete="new-password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" autoComplete="new-password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" variant="accent">Update password</Button>
             </form>
           </Form>
         </CardContent>

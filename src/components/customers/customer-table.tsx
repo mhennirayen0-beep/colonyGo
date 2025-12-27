@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { customers } from "@/lib/data";
+import { useAbility } from '@/lib/ability';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
@@ -29,10 +29,25 @@ import {
 import type { Customer } from "@/lib/types";
 
 interface CustomerTableProps {
+  customers: Customer[];
   onEdit: (customer: Customer) => void;
+  onDelete?: (customer: Customer) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export function CustomerTable({ onEdit }: CustomerTableProps) {
+function initialsFor(name?: string) {
+  if (!name) return 'C';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join('');
+}
+
+export function CustomerTable({ customers, onEdit, onDelete, loading, error }: CustomerTableProps) {
+  const ability = useAbility();
   return (
     <Card>
       <CardHeader>
@@ -40,6 +55,11 @@ export function CustomerTable({ onEdit }: CustomerTableProps) {
         <CardDescription>Manage your customer contacts and companies.</CardDescription>
       </CardHeader>
       <CardContent>
+        {error ? (
+          <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
         <Table>
           <TableHeader>
             <TableRow>
@@ -50,13 +70,21 @@ export function CustomerTable({ onEdit }: CustomerTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.map((customer) => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-sm text-muted-foreground">Loading…</TableCell>
+              </TableRow>
+            ) : customers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-sm text-muted-foreground">No customers.</TableCell>
+              </TableRow>
+            ) : customers.map((customer) => (
               <TableRow key={customer.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={customer.avatarUrl} alt={customer.name} />
-                      <AvatarFallback>{customer.initials}</AvatarFallback>
+                      <AvatarFallback>{customer.initials ?? initialsFor(customer.name)}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium">{customer.name}</span>
                   </div>
@@ -72,8 +100,12 @@ export function CustomerTable({ onEdit }: CustomerTableProps) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(customer)}>Edit</DropdownMenuItem>
-                             <DropdownMenuItem>View Details</DropdownMenuItem>
+                            {ability.can('update', 'Customer') ? (
+                              <DropdownMenuItem onClick={() => onEdit(customer)}>Edit</DropdownMenuItem>
+                            ) : null}
+                            {onDelete && ability.can('delete', 'Customer') ? (
+                              <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive">Delete</DropdownMenuItem>
+                            ) : null}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </TableCell>

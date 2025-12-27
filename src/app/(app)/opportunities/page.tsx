@@ -8,8 +8,12 @@ import { subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import type { Opportunity, RagStatus } from '@/lib/types';
 
-import { opportunities as allOpportunities, salesActions, salesAlerts, salesNewsFeed } from '@/lib/data';
+import { salesActions, salesAlerts, salesNewsFeed } from '@/lib/data';
 import { OpportunityDialog } from '@/components/opportunities/opportunity-dialog';
+import { useOpportunitiesStore } from '@/lib/opportunities-store';
+import { useCustomers } from '@/hooks/use-customers';
+import { useAbility } from '@/lib/ability';
+import { useToast } from '@/hooks/use-toast';
 
 import { SalesModeToggle } from '@/components/sales-management/sales-mode-toggle';
 import { SalesSectionToggle } from '@/components/sales-management/sales-section-toggle';
@@ -18,11 +22,16 @@ import { SalesDataView } from '@/components/sales-management/sales-data-view';
 import { SalesViewDashboard } from '@/components/sales-management/sales-view-dashboard';
 import { SalesCrmView } from '@/components/sales-management/sales-crm-view';
 
+
 function uniq(arr: string[]) {
   return Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
 }
 
 export default function OpportunitiesPage() {
+  const { toast } = useToast();
+  const ability = useAbility();
+  const { customers } = useCustomers();
+  const { opportunities, loading } = useOpportunitiesStore();
   const sp = useSearchParams();
   const mode = (sp.get('mode') ?? 'data') === 'view' ? 'view' : 'data';
   const tab = (sp.get('tab') ?? 'sales') === 'crm' ? 'crm' : 'sales';
@@ -31,8 +40,14 @@ export default function OpportunitiesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
 
-  const owners = useMemo(() => uniq(allOpportunities.map((o) => o.opportunityowner)), []);
-  const clients = useMemo(() => uniq(allOpportunities.map((o) => o.customername)), []);
+  const customerNameById = useMemo(() => new Map(customers.map((c) => [c.id, c.name] as const)), [customers]);
+  const allOpportunities = useMemo(
+    () => opportunities.map((o) => ({ ...o, customername: o.customername || customerNameById.get(o.customerid) || o.customerid })),
+    [opportunities, customerNameById]
+  );
+
+  const owners = useMemo(() => uniq(allOpportunities.map((o) => o.opportunityowner)), [allOpportunities]);
+  const clients = useMemo(() => uniq(allOpportunities.map((o) => o.customername)), [allOpportunities]);
 
   const periodStart = useMemo(() => {
     const p = filters.period ?? 'all';
@@ -72,6 +87,24 @@ export default function OpportunitiesPage() {
       return hay.includes(q);
     });
   }, [filters, periodStart]);
+
+  const openNew = () => {
+    if (!ability.can('create', 'Opportunity')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to create opportunities.', variant: 'destructive' });
+      return;
+    }
+    setSelectedOpp(null);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (o: Opportunity) => {
+    if (!ability.can('update', 'Opportunity')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to edit opportunities.', variant: 'destructive' });
+      return;
+    }
+    setSelectedOpp(o);
+    setDialogOpen(true);
+  };
 
   const filteredActions = useMemo(() => {
     const q = (filters.query ?? '').trim().toLowerCase();
@@ -119,6 +152,10 @@ export default function OpportunitiesPage() {
   };
 
   const handleNewOpportunity = () => {
+    if (!ability.can('create', 'Opportunity')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to create opportunities.', variant: 'destructive' });
+      return;
+    }
     setSelectedOpp(null);
     setDialogOpen(true);
   };
@@ -154,7 +191,7 @@ export default function OpportunitiesPage() {
         </div>
 
         {tab === 'sales' && mode === 'data' && (
-          <Button onClick={handleNewOpportunity} variant="accent">
+          <Button onClick={handleNewOpportunity} variant="accent" disabled={loading || !ability.can('create', 'Opportunity')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Opportunity
           </Button>

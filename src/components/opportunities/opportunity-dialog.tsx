@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,8 +32,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Opportunity } from '@/lib/types';
-import { customers } from '@/lib/data';
 import { useOpportunitiesStore } from '@/lib/opportunities-store';
+import { useCustomers } from '@/hooks/use-customers';
+import { useAbility } from '@/lib/ability';
 
 const opportunitySchema = z.object({
   opportunityname: z.string().min(1, 'Name is required'),
@@ -60,7 +61,10 @@ export function OpportunityDialog({
   onFormSubmit,
 }: OpportunityDialogProps) {
   const { toast } = useToast();
+  const ability = useAbility();
+  const { customers } = useCustomers();
   const { createOpportunity, upsertOpportunity } = useOpportunitiesStore();
+  const [saving, setSaving] = useState(false);
   const form = useForm<OpportunityFormValues>({
     resolver: zodResolver(opportunitySchema),
   });
@@ -89,10 +93,15 @@ export function OpportunityDialog({
     }
   }, [opportunity, form, open]);
 
-  const onSubmit = (values: OpportunityFormValues) => {
+  const onSubmit = async (values: OpportunityFormValues) => {
+    if (opportunity && !ability.can('update', 'Opportunity')) return;
+    if (!opportunity && !ability.can('create', 'Opportunity')) return;
+
+    setSaving(true);
     const customer = customers.find((c) => c.id === values.customerid);
-    if (opportunity) {
-      upsertOpportunity(opportunity.id, {
+    try {
+      if (opportunity) {
+        await upsertOpportunity(opportunity.id, {
         opportunityname: values.opportunityname,
         opportunitydescription: values.opportunitydescription ?? '',
         customerid: values.customerid,
@@ -100,9 +109,9 @@ export function OpportunityDialog({
         value_forecast: values.value_forecast,
         opportunityphase: values.opportunityphase,
         opportunitystatut: values.opportunitystatut,
-      });
-    } else {
-      createOpportunity({
+        });
+      } else {
+        await createOpportunity({
         opportunityname: values.opportunityname,
         opportunitydescription: values.opportunitydescription ?? '',
         customerid: values.customerid,
@@ -110,15 +119,24 @@ export function OpportunityDialog({
         value_forecast: values.value_forecast,
         opportunityphase: values.opportunityphase,
         opportunitystatut: values.opportunitystatut,
-      });
-    }
+        });
+      }
 
-    toast({
-      title: opportunity ? 'Opportunity Updated' : 'Opportunity Created',
-      description: `${values.opportunityname} has been successfully saved.`,
-    });
-    
-    onFormSubmit();
+      toast({
+        title: opportunity ? 'Opportunity Updated' : 'Opportunity Created',
+        description: `${values.opportunityname} has been successfully saved.`,
+      });
+
+      onFormSubmit();
+    } catch (err: any) {
+      toast({
+        title: 'Save failed',
+        description: err?.message ? String(err.message) : 'Could not save opportunity.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -246,7 +264,9 @@ export function OpportunityDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" variant="accent">Save Opportunity</Button>
+            <Button type="submit" variant="accent" disabled={saving}>
+              {saving ? 'Saving…' : 'Save Opportunity'}
+            </Button>
           </DialogFooter>
           </form>
         </Form>

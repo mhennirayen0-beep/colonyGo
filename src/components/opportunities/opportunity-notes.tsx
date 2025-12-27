@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,25 @@ import { useOpportunitiesStore } from '@/lib/opportunities-store';
 
 export function OpportunityNotes({ opportunityId }: { opportunityId: string }) {
   const [value, setValue] = useState('');
+  const [saving, setSaving] = useState(false);
   const canAdd = useMemo(() => value.trim().length > 0, [value]);
 
-  const { addNote, getNotesForOpportunity } = useOpportunitiesStore();
+  const { addNote, getNotesForOpportunity, loadNotesForOpportunity } = useOpportunitiesStore();
   const notes = getNotesForOpportunity(opportunityId);
 
-  const handleAdd = (source: 'user' | 'ai') => {
+  useEffect(() => {
+    loadNotesForOpportunity(opportunityId).catch(() => void 0);
+  }, [loadNotesForOpportunity, opportunityId]);
+
+  const handleAdd = async (source: 'user' | 'ai') => {
     if (!canAdd) return;
-    addNote(opportunityId, value.trim(), source);
-    setValue('');
+    setSaving(true);
+    try {
+      await addNote(opportunityId, value.trim(), source);
+      setValue('');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -34,10 +44,10 @@ export function OpportunityNotes({ opportunityId }: { opportunityId: string }) {
           className="min-h-24"
         />
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => handleAdd('user')} disabled={!canAdd}>
+          <Button onClick={() => handleAdd('user')} disabled={!canAdd || saving}>
             Add note
           </Button>
-          <Button variant="accent" onClick={() => handleAdd('ai')} disabled={!canAdd}>
+          <Button variant="accent" onClick={() => handleAdd('ai')} disabled={!canAdd || saving}>
             <AIProvenanceIcon className="mr-2" /> Add as IA
           </Button>
         </div>
