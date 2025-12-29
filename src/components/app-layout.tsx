@@ -45,6 +45,17 @@ function Header() {
           )}
         />
       </div>
+      <div className="hidden flex-1 justify-center md:flex">
+        {pathname.startsWith("/opportunities") ? (
+          <div className="flex items-center gap-3">
+            {tab === "sales" && <SalesModeToggle />}
+          </div>
+        ) : (
+          <h1 className="font-headline text-lg font-semibold text-primary">
+            ColonyGo
+          </h1>
+        )}
+      </div>
 
       {/* Top-right actions: Messages, Help, Profile/Disconnect */}
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
