@@ -1,32 +1,86 @@
 'use client';
 
-import { useMemo } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 export type SalesMode = 'data' | 'view';
 
-function setParam(searchParams: URLSearchParams, key: string, value: string) {
-  const next = new URLSearchParams(searchParams.toString());
-  next.set(key, value);
-  return next;
+function readModeFromUrl(): SalesMode {
+  if (typeof window === 'undefined') return 'data';
+  const m = new URLSearchParams(window.location.search).get('mode');
+  return m === 'view' ? 'view' : 'data';
 }
 
+function patchHistoryOnce() {
+  if (typeof window === 'undefined') return () => {};
+
+  const w = window as any;
+  if (w.__colonygo_history_patched) return () => {};
+  w.__colonygo_history_patched = true;
+
+  const fire = () => window.dispatchEvent(new Event('colonygo:locationchange'));
+
+  const origPush = history.pushState;
+  const origReplace = history.replaceState;
+
+  history.pushState = function (...args) {
+    const ret = origPush.apply(this, args as any);
+    fire();
+    return ret;
+  } as any;
+
+  history.replaceState = function (...args) {
+    const ret = origReplace.apply(this, args as any);
+    fire();
+    return ret;
+  } as any;
+
+  window.addEventListener('popstate', fire);
+
+  return () => {
+    window.removeEventListener('popstate', fire);
+  };
+}
+
+/**
+ * Sales top-center toggle (Data / View).
+ * IMPORTANT: we intentionally avoid `useSearchParams()` to prevent the
+ * Next.js build error: "useSearchParams() should be wrapped in a suspense boundary".
+ */
 export function SalesModeToggle({ className }: { className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const sp = useSearchParams();
 
-  const mode = useMemo<SalesMode>(() => {
-    const m = (sp.get('mode') ?? 'data') as SalesMode;
-    return m === 'view' ? 'view' : 'data';
-  }, [sp]);
+  const [mode, setMode] = useState<SalesMode>('data');
+
+  useEffect(() => {
+    const cleanup = patchHistoryOnce();
+    const sync = () => setMode(readModeFromUrl());
+    sync();
+    window.addEventListener('colonygo:locationchange', sync);
+    return () => {
+      window.removeEventListener('colonygo:locationchange', sync);
+      cleanup();
+    };
+  }, [pathname]);
 
   const go = (m: SalesMode) => {
-    const next = setParam(sp as unknown as URLSearchParams, 'mode', m);
-    router.replace(`${pathname}?${next.toString()}`);
+    if (typeof window === 'undefined') return;
+    const next = new URLSearchParams(window.location.search);
+    next.set('mode', m);
+    setMode(m);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
   };
+
+  const isSalesPage = useMemo(
+    () => pathname.startsWith('/opportunities') || pathname.startsWith('/crm'),
+    [pathname]
+  );
+
+  if (!isSalesPage) return null;
 
   return (
     <div

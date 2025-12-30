@@ -7,11 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AIProvenanceIcon } from '@/components/ai/ai-provenance-icon';
 import { useOpportunitiesStore } from '@/lib/opportunities-store';
+import { useAbility } from '@/lib/ability';
+import { useToast } from '@/hooks/use-toast';
 
 export function OpportunityNotes({ opportunityId }: { opportunityId: string }) {
+  const { toast } = useToast();
+  const ability = useAbility();
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
   const canAdd = useMemo(() => value.trim().length > 0, [value]);
+  const canCreate = ability.can('create', 'Note');
 
   const { addNote, getNotesForOpportunity, loadNotesForOpportunity } = useOpportunitiesStore();
   const notes = getNotesForOpportunity(opportunityId);
@@ -22,6 +27,10 @@ export function OpportunityNotes({ opportunityId }: { opportunityId: string }) {
 
   const handleAdd = async (source: 'user' | 'ai') => {
     if (!canAdd) return;
+    if (!canCreate) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to add notes.', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
       await addNote(opportunityId, value.trim(), source);
@@ -44,10 +53,10 @@ export function OpportunityNotes({ opportunityId }: { opportunityId: string }) {
           className="min-h-24"
         />
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => handleAdd('user')} disabled={!canAdd || saving}>
+          <Button onClick={() => handleAdd('user')} disabled={!canAdd || saving || !canCreate}>
             Add note
           </Button>
-          <Button variant="accent" onClick={() => handleAdd('ai')} disabled={!canAdd || saving}>
+          <Button variant="accent" onClick={() => handleAdd('ai')} disabled={!canAdd || saving || !canCreate}>
             <AIProvenanceIcon className="mr-2" /> Add as IA
           </Button>
         </div>

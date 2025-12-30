@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -28,37 +28,56 @@ import {
 import { cn } from "@/lib/utils";
 import { useAbility } from '@/lib/ability';
 
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3, subject: 'Dashboard' },
+// Permission subjects catalog (single source of truth)
+import { APP_SCREENS } from '@/config/screens';
+
+// Resolve subject key from catalog (fallback to provided)
+function subjectFor(href: string, fallback?: string) {
+  const path = href.split('?')[0];
+  const found = APP_SCREENS.find((s) => s.href === path);
+  return found?.subject ?? fallback;
+}
+
+const baseItems = [
+  { href: "/dashboard", label: "Dashboard", icon: BarChart3, subject: subjectFor('/dashboard', 'Dashboard') },
+  { href: "/clients", label: "Clients", icon: Users, subject: subjectFor('/clients', 'Client') },
+  { href: "/customers", label: "Customers", icon: Users, subject: subjectFor('/customers', 'Customer') },
+  { href: "/products", label: "Products", icon: ShoppingCart, subject: subjectFor('/products', 'Product') },
+  { href: "/files", label: "Colony Files", icon: Folder, subject: subjectFor('/files', 'File') },
+  { href: "/notes", label: "Colony Notes", icon: StickyNote, subject: subjectFor('/notes', 'Note') },
+];
+
+const salesItems = [
   {
-    href: "/opportunities?tab=sales&mode=data",
+    href: "/opportunities?mode=data",
     label: "Colony Sales",
     icon: Briefcase,
-    subject: 'Opportunity',
+    // Sales group is visible if user can view at least one child screen
     children: [
-      { href: "/opportunities?tab=sales&mode=data", label: "Sales Management" },
-      { href: "/opportunities?tab=crm&mode=data", label: "CRM" },
+      { href: "/opportunities?mode=data", label: "Opportunities", subject: subjectFor('/opportunities', 'Opportunity') },
+      { href: "/quotes", label: "Quotes", subject: subjectFor('/quotes', 'Quote') },
+      { href: "/invoices", label: "Invoices", subject: subjectFor('/invoices', 'Invoice') },
+      { href: "/payments", label: "Payments", subject: subjectFor('/payments', 'Payment') },
+      { href: "/crm?mode=data", label: "CRM", subject: subjectFor('/crm', 'CRM') },
     ],
   },
-  { href: "/colony-buy", label: "Colony Buy", icon: ShoppingCart },
-  { href: "/colony-desk", label: "Colony Desk", icon: ClipboardList },
-  { href: "/colony-plan", label: "Colony Plan", icon: Calendar },
-  { href: "/colony-supply", label: "Colony Supply", icon: Truck },
-  { href: "/colony-finance", label: "Colony Finance", icon: Wallet },
-  { href: "/colony-resource", label: "Colony Resource", icon: Users },
-  { href: "/colony-tech", label: "Colony Tech", icon: Cpu },
-  { href: "/colony-admin", label: "Colony Admin", icon: Settings },
-  { href: "/colony-security", label: "Colony Security", icon: Shield },
-  { href: "/colony-quality", label: "Colony Quality", icon: BadgeCheck },
-  { href: "/customers", label: "Customers", icon: Users, subject: 'Customer' },
-  { href: "/products", label: "Products", icon: ShoppingCart, subject: 'Product' },
-  { href: "/files", label: "Colony Files", icon: Folder, subject: 'File' },
-  { href: "/notes", label: "Colony Notes", icon: StickyNote, subject: 'Note' },
+  { href: "/colony-buy", label: "Colony Buy", icon: ShoppingCart, subject: subjectFor('/colony-buy', 'ColonyBuy') },
+  { href: "/colony-desk", label: "Colony Desk", icon: ClipboardList, subject: subjectFor('/colony-desk', 'ColonyDesk') },
+  { href: "/colony-plan", label: "Colony Plan", icon: Calendar, subject: subjectFor('/colony-plan', 'ColonyPlan') },
+  { href: "/colony-supply", label: "Colony Supply", icon: Truck, subject: subjectFor('/colony-supply', 'ColonySupply') },
+  { href: "/colony-finance", label: "Colony Finance", icon: Wallet, subject: subjectFor('/colony-finance', 'ColonyFinance') },
+  { href: "/colony-resource", label: "Colony Resource", icon: Users, subject: subjectFor('/colony-resource', 'ColonyResource') },
+  { href: "/colony-tech", label: "Colony Tech", icon: Cpu, subject: subjectFor('/colony-tech', 'ColonyTech') },
+];
+
+const adminItems = [
+  { href: "/colony-admin", label: "Colony Admin", icon: Settings, subject: subjectFor('/colony-admin', 'ColonyAdmin') },
+  { href: "/colony-security", label: "Colony Security", icon: Shield, subject: subjectFor('/colony-security', 'ColonySecurity') },
+  { href: "/colony-quality", label: "Colony Quality", icon: BadgeCheck, subject: subjectFor('/colony-quality', 'ColonyQuality') },
 ];
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
-  const sp = useSearchParams();
   const { state } = useSidebar();
   const ability = useAbility();
 
@@ -69,9 +88,11 @@ export function MainNav({ className }: { className?: string }) {
     ability.can('manage', 'User') ||
     ability.can('manage', 'Role');
 
-  const salesTab = (sp.get('tab') ?? 'sales') === 'crm' ? 'crm' : 'sales';
-  const onSales = pathname.startsWith('/opportunities');
+  const onSales = pathname.startsWith('/opportunities') || pathname.startsWith('/crm') || pathname.startsWith('/quotes') || pathname.startsWith('/invoices') || pathname.startsWith('/payments');
   const onUserManagement = pathname.startsWith('/user-management');
+
+  // Hotfix: module switch removed. We show all modules directly in the nav.
+  const menuItems = [...baseItems, ...salesItems, ...adminItems];
 
   return (
     <nav className={cn("p-2", className)}>
@@ -84,14 +105,17 @@ export function MainNav({ className }: { className?: string }) {
                   label: 'User Management',
                   icon: UserCog,
                   children: [
-                    { href: '/user-management/roles', label: 'Role Management' },
-                    { href: '/user-management/users', label: 'User Management' },
+                    { href: '/user-management/roles', label: 'Role Management', subject: subjectFor('/user-management/roles', 'Role') },
+                    { href: '/user-management/users', label: 'User Management', subject: subjectFor('/user-management/users', 'User') },
                   ],
                 },
               ]
             : []),
         ].filter((it: any) => {
-          // hide core CRUD modules if user cannot view
+          // group items
+          if (it.children?.length) {
+            return it.children.some((c: any) => !c.subject || ability.can('view', c.subject));
+          }
           if (!it.subject) return true;
           return ability.can('view', it.subject);
         }).map((item: any) => {
@@ -122,11 +146,19 @@ export function MainNav({ className }: { className?: string }) {
                 </Link>
               </SidebarMenuButton>
 
-              {/* Sub-items (Sales / CRM) */}
+              {/* Sub-items */}
               <div className={cn('mt-1 flex flex-col gap-1 pl-2', state === 'collapsed' && 'hidden')}>
-                {item.children.map((child: any) => {
+                {item.children
+                  .filter((child: any) => !child.subject || ability.can('view', child.subject))
+                  .map((child: any) => {
                   const isChildActive = isSalesGroup
-                    ? onSales && ((child.label === 'CRM' && salesTab === 'crm') || (child.label !== 'CRM' && salesTab === 'sales'))
+                    ? (
+                        (pathname.startsWith('/crm') && child.label === 'CRM') ||
+                        (pathname.startsWith('/opportunities') && child.label === 'Opportunities') ||
+                        (pathname.startsWith('/quotes') && child.label === 'Quotes') ||
+                        (pathname.startsWith('/invoices') && child.label === 'Invoices') ||
+                        (pathname.startsWith('/payments') && child.label === 'Payments')
+                      )
                     : pathname === child.href || pathname.startsWith(child.href + '/');
 
                   return (

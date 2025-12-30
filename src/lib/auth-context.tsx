@@ -99,6 +99,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshMe();
   }, [refreshMe]);
 
+  // Keep permissions in sync (e.g. when an admin changes your role/permissions)
+  // without forcing a full logout/login.
+  useEffect(() => {
+    // Tiny debounce so multiple focus events don't spam the API.
+    let t: any = null;
+    const schedule = () => {
+      if (t) return;
+      t = setTimeout(async () => {
+        t = null;
+        // Only refresh if we have a session.
+        const { accessToken, refreshToken } = getTokens();
+        if (!accessToken && !refreshToken) return;
+        await refreshMe();
+      }, 250);
+    };
+
+    const onFocus = () => schedule();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') schedule();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [refreshMe]);
+
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password }, { auth: false });
     setTokens(res.accessToken, res.refreshToken);

@@ -5,6 +5,7 @@ import { opportunities } from '@/lib/data';
 import type { Opportunity } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { OpportunitiesListDialog } from './opportunities-list-dialog';
+import { formatCurrency } from '@/components/sales-management/sales-utils';
 
 type Segment = {
   phase: Opportunity['opportunityphase'];
@@ -30,6 +31,20 @@ export function PipelineSnake() {
 
   const total = segments.reduce((a, s) => a + s.amount, 0) || 1;
 
+  // Integer widths (sum to 100) for proportional snake thickness.
+  const widths = useMemo(() => {
+    const raw = segments.map((s) => ((s.amount || 0) / total) * 100);
+    const base = raw.map((x) => Math.floor(x));
+    const rem = raw.map((x, i) => ({ i, r: x - base[i] })).sort((a, b) => b.r - a.r);
+    const out = base.slice();
+    let left = Math.max(0, 100 - out.reduce((a, b) => a + b, 0));
+    for (let k = 0; k < out.length && left > 0; k++) {
+      out[rem[k].i] += 1;
+      left -= 1;
+    }
+    return out;
+  }, [segments, total]);
+
   const selectedOpps = useMemo(
     () => opportunities.filter((o) => o.opportunityphase === selectedPhase),
     [selectedPhase]
@@ -44,7 +59,6 @@ export function PipelineSnake() {
 
         <div className="flex w-full overflow-hidden rounded-2xl border bg-background">
           {segments.map((s, idx) => {
-            const w = Math.max(8, Math.round((s.amount / total) * 100));
             return (
               <button
                 key={s.phase}
@@ -58,7 +72,7 @@ export function PipelineSnake() {
                   s.phase === 'Evaluation' && 'bg-primary/20',
                   s.phase === 'Deal' && 'bg-primary/25'
                 )}
-                style={{ width: `${w}%` }}
+                style={{ flex: `0 0 ${widths[idx]}%`, minWidth: 96 }}
                 onClick={() => {
                   setSelectedPhase(s.phase);
                   setOpen(true);
@@ -66,7 +80,7 @@ export function PipelineSnake() {
               >
                 <div className="text-xs font-medium text-muted-foreground">{s.phase}</div>
                 <div className="text-base font-semibold text-foreground">
-                  {s.count} · {s.amount.toLocaleString()}
+                  {s.count} · {formatCurrency(s.amount)}
                 </div>
                 <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-border/60" />
               </button>

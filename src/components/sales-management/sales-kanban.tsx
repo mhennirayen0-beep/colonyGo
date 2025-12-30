@@ -3,7 +3,7 @@
 import type { Opportunity } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { statusClass, phaseVariant, formatCurrency } from './sales-utils';
+import { statusClass, phaseVariant, formatCurrency, getOpportunityCurrency } from './sales-utils';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -45,7 +45,7 @@ export function SalesCommitteeKanban({ items }: Props) {
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Badge variant={phaseVariant[o.opportunityphase]}>{o.opportunityphase}</Badge>
                       <Badge className={statusClass[o.opportunitystatut]}>{o.opportunitystatut}</Badge>
-                      <span className="text-xs font-medium text-primary">{formatCurrency(o.value_forecast)}</span>
+                      <span className="text-xs font-medium text-primary">{formatCurrency(o.value_forecast, getOpportunityCurrency(o))}</span>
                     </div>
                   </div>
                 ))}

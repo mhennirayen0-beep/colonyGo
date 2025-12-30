@@ -13,12 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, RotateCw } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 export function UserNav() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshMe } = useAuth();
 
   if (!user) return null;
 
@@ -65,6 +65,15 @@ export function UserNav() {
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={async () => {
+              await refreshMe();
+            }}
+          >
+            <RotateCw className="mr-2 h-4 w-4" />
+            <span>Refresh permissions</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

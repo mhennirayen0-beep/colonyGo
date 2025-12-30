@@ -6,19 +6,7 @@ import type { Opportunity } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-
-function formatCurrency(value: number) {
-  const n = Number(value || 0);
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: "TND",
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return String(Math.round(n));
-  }
-}
+import { commonCurrency, formatCurrency, getOpportunityCurrency } from "@/components/sales-management/sales-utils";
 
 function PhaseBadge({ phase }: { phase: Opportunity["opportunityphase"] }) {
   if (phase === "Prospection") return <Badge variant="secondary">Prospection</Badge>;
@@ -47,6 +35,9 @@ export function OpportunityDrilldownSheet({
   ctaHref,
   ctaLabel = "Open in Sales Management",
 }: OpportunityDrilldownSheetProps) {
+  const currency = commonCurrency(opportunities);
+  const mixed = opportunities.length > 0 && !currency;
+
   const totals = useMemo(() => {
     const totalForecast = opportunities.reduce((sum, o) => sum + (Number(o.value_forecast) || 0), 0);
     const totalCount = opportunities.length;
@@ -59,7 +50,11 @@ export function OpportunityDrilldownSheet({
         <SheetHeader>
           <SheetTitle className="font-headline">{title}</SheetTitle>
           <SheetDescription>
-            {description ?? `${totals.totalCount} opportunities · Forecast ${formatCurrency(totals.totalForecast)}`}
+            {description ??
+              `${totals.totalCount} opportunities` +
+                (mixed
+                  ? ' · Forecast: mixed currencies'
+                  : ` · Forecast ${formatCurrency(totals.totalForecast, currency ?? 'EUR')}`)}
           </SheetDescription>
         </SheetHeader>
 
@@ -96,7 +91,7 @@ export function OpportunityDrilldownSheet({
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-2">
-                    <div className="text-sm font-semibold text-primary">{formatCurrency(o.value_forecast)}</div>
+                    <div className="text-sm font-semibold text-primary">{formatCurrency(o.value_forecast, getOpportunityCurrency(o))}</div>
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/opportunities/${o.id}`}>View</Link>
                     </Button>

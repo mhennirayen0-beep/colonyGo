@@ -48,6 +48,54 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+
+function SectionControls({
+  shown,
+  total,
+  initial,
+  step,
+  onMore,
+  onAll,
+  onReset,
+}: {
+  shown: number;
+  total: number;
+  initial: number;
+  step: number;
+  onMore: () => void;
+  onAll: () => void;
+  onReset: () => void;
+}) {
+  if (total <= initial) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="text-xs text-muted-foreground">
+        Showing <span className="font-medium text-foreground">{shown}</span> of{' '}
+        <span className="font-medium text-foreground">{total}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {shown < total && (
+          <>
+            <Button variant="secondary" size="sm" onClick={onMore}>
+              More Entries (+{Math.min(step, total - shown)})
+            </Button>
+            <Button variant="outline" size="sm" onClick={onAll}>
+              Show all
+            </Button>
+          </>
+        )}
+        {shown > initial && (
+          <Button variant="ghost" size="sm" onClick={onReset}>
+            Collapse
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 export function SalesCrmView({
   opportunities,
   alerts,
@@ -60,6 +108,10 @@ export function SalesCrmView({
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState<AccountRow | null>(null);
   const [open, setOpen] = useState(false);
+
+  const ACC_INITIAL = 12;
+  const STEP = 10;
+  const [limit, setLimit] = useState(ACC_INITIAL);
 
   const accounts = useMemo<AccountRow[]>(() => {
     const byCustomer = new Map<string, Opportunity[]>();
@@ -112,6 +164,9 @@ export function SalesCrmView({
       return hay.includes(qq);
     });
   }, [accounts, q]);
+
+  const shown = useMemo(() => filtered.slice(0, limit), [filtered, limit]);
+
 
   const totals = useMemo(() => {
     const clients = accounts.length;
@@ -195,7 +250,7 @@ export function SalesCrmView({
         </CardHeader>
         <CardContent>
           <div className="hidden md:block">
-            <Table>
+            <Table className="w-full table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
@@ -208,7 +263,7 @@ export function SalesCrmView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((a) => (
+                {shown.map((a) => (
                   <TableRow key={a.customerid} className="cursor-pointer" onClick={() => openAccount(a)}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -221,7 +276,7 @@ export function SalesCrmView({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{a.owners.join(', ')}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-normal break-words">{a.owners.join(', ')}</TableCell>
                     <TableCell className="text-right font-medium">{a.opportunities.length}</TableCell>
                     <TableCell className="text-right font-medium">{money(a.pipelineForecast)}</TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground">
@@ -241,7 +296,7 @@ export function SalesCrmView({
 
           {/* Mobile cards */}
           <div className="grid gap-3 md:hidden">
-            {filtered.map((a) => (
+            {shown.map((a) => (
               <button
                 key={a.customerid}
                 className="rounded-2xl border bg-background p-4 text-left shadow-sm"
@@ -264,6 +319,15 @@ export function SalesCrmView({
                 </div>
               </button>
             ))}
+          <SectionControls
+            shown={shown.length}
+            total={filtered.length}
+            initial={ACC_INITIAL}
+            step={STEP}
+            onMore={() => setLimit((x) => Math.min(filtered.length, x + STEP))}
+            onAll={() => setLimit(filtered.length)}
+            onReset={() => setLimit(ACC_INITIAL)}
+          />
           </div>
         </CardContent>
       </Card>

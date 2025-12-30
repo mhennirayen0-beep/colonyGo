@@ -26,11 +26,18 @@ export interface Customer {
 export interface Opportunity {
   id: string; // Format: OPP-00001
   createdAtISO?: string; // Synthetic (from dummydata) to enable period filtering
+  currency?: string; // France default: "EUR"
   opportunityname: string;
   opportunitydescription: string;
   
   customerid: string; // Format: CS-AWS-001
   customername: string;
+
+  /** Optional CRM linkage (Deals): company/contact */
+  companyid?: string; // CO-000001
+  companyname?: string;
+  contactid?: string; // CT-000001
+  contactname?: string;
   
   opportunitystatut: 'Forecast' | 'Start' | 'Stop' | 'Cancelled';
   opportunityphase: 'Prospection' | 'Discovery' | 'Evaluation' | 'Deal';
@@ -61,6 +68,81 @@ export interface Opportunity {
 
   // For UI convenience
   ownerDetails?: User;
+}
+
+export interface LineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_percent?: number;
+  productid?: string;
+}
+
+export interface Quote {
+  id: string; // QTE-000001
+  title: string;
+  customerid: string;
+  customername: string;
+  opportunityid?: string;
+  opportunityname?: string;
+  status: 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Expired';
+  currency?: string; // default EUR
+  vat_rate?: number; // 0 / 5.5 / 10 / 20
+  line_items?: LineItem[];
+  total_excl_tax: number;
+  total_tax: number;
+  total_incl_tax: number;
+  valid_until?: string;
+  sent_on?: string;
+  accepted_on?: string;
+  rejected_on?: string;
+  expired_on?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Invoice {
+  id: string; // INV-000001
+  title: string;
+  customerid: string;
+  customername: string;
+  opportunityid?: string;
+  opportunityname?: string;
+  quoteid?: string;
+  quotetitle?: string;
+  status: 'Draft' | 'Issued' | 'Paid' | 'Cancelled';
+  currency?: string; // default EUR
+  vat_rate?: number; // 0 / 5.5 / 10 / 20
+  line_items?: LineItem[];
+  total_excl_tax: number;
+  total_tax: number;
+  total_incl_tax: number;
+  /** Sum of payments already recorded for this invoice. */
+  paid_total?: number;
+  /** Remaining due = total_incl_tax - paid_total (never < 0). */
+  remaining_due?: number;
+  issued_on?: string;
+  due_on?: string;
+  paid_on?: string;
+  payment_reference?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Payment {
+  id: string; // PAY-000001
+  invoiceid: string; // INV-000001
+  invoicetitle?: string;
+  customerid: string;
+  customername: string;
+  currency?: string; // defaults to invoice currency
+  amount: number;
+  method: 'Cash' | 'Card' | 'Transfer' | 'Check' | 'Other';
+  paid_on: string; // ISO
+  reference?: string;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Product {
@@ -165,3 +247,24 @@ export type SalesNewsRow = {
 };
 
 export type RagStatus = 'green' | 'orange' | 'red';
+
+export interface Company {
+  id: string; // CO-000001
+  name: string;
+  industry?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface Contact {
+  id: string; // CT-000001
+  name: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  companyId?: string;
+  companyName?: string;
+}

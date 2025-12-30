@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -25,10 +26,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { opportunities, salesActions, salesAlertes, salesNewsFeed, users } from '@/lib/data';
 import type { Opportunity, SalesAction, SalesAlertRow, SalesNewsRow } from '@/lib/types';
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
+const formatCurrency = (value: number, currency: string = 'EUR') =>
+  new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -69,6 +70,17 @@ function OwnerCell({ name }: { name: string }) {
 
 export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => void } = {}) {
   const [q, setQ] = useState('');
+  const [expandedActions, setExpandedActions] = useState<Set<string>>(() => new Set());
+  const [expandedAlerts, setExpandedAlerts] = useState<Set<string>>(() => new Set());
+
+  const toggle = (setFn: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) => {
+    setFn((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const filteredOpps = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -174,8 +186,8 @@ export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => v
                       {o.opportunitystatut}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{formatCurrency(o.value_forecast)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(o.value_final)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(o.value_forecast, (o.currency || 'EUR').toUpperCase())}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(o.value_final, (o.currency || 'EUR').toUpperCase())}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -191,8 +203,8 @@ export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => v
             Action list (Ticketing Management). RAG indicator computed from delay/urgency rules.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
+        <CardContent>
+          <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead>Opportunity ID</TableHead>
@@ -201,25 +213,58 @@ export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => v
                 <TableHead>Sales Owner</TableHead>
                 <TableHead>Current action</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-[140px] text-right">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredActions.map((a: SalesAction, idx: number) => (
-                <TableRow key={`${a.opportunityid}-${idx}`}>
-                  <TableCell className="font-mono text-xs">{a.opportunityid}</TableCell>
-                  <TableCell className="font-medium">{a.title}</TableCell>
-                  <TableCell>{a.clientname}</TableCell>
-                  <TableCell><OwnerCell name={a.salesowner} /></TableCell>
-                  <TableCell className="max-w-[420px] truncate">{a.currentaction}</TableCell>
-                  <TableCell>
-                    {/* no delay_days in action list; we show neutral */}
-                    <span className="inline-flex items-center gap-2 text-sm">
-                      <span className="h-2 w-2 rounded-full bg-status-forecast" />
-                      In progress
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredActions.map((a: SalesAction, idx: number) => {
+                const key = `${a.opportunityid}-${idx}`;
+                const open = expandedActions.has(key);
+                return (
+                  <React.Fragment key={key}>
+                    <TableRow>
+                      <TableCell className="font-mono text-xs whitespace-normal break-words">{a.opportunityid}</TableCell>
+                      <TableCell className="font-medium whitespace-normal break-words">{a.title}</TableCell>
+                      <TableCell className="whitespace-normal break-words">{a.clientname}</TableCell>
+                      <TableCell className="whitespace-normal break-words"><OwnerCell name={a.salesowner} /></TableCell>
+                      <TableCell className="whitespace-normal break-words">
+                        <span className="line-clamp-2">{a.currentaction}</span>
+                      </TableCell>
+                      <TableCell>
+                        {/* no delay_days in action list; we show neutral */}
+                        <span className="inline-flex items-center gap-2 text-sm">
+                          <span className="h-2 w-2 rounded-full bg-status-forecast" />
+                          In progress
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => toggle(setExpandedActions, key)}>
+                          {open ? 'Hide' : 'Details'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+
+                    {open && (
+                      <TableRow className="bg-muted/20">
+                        <TableCell colSpan={7} className="p-4">
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <div className="text-xs font-semibold text-muted-foreground">Current action</div>
+                              <div className="mt-1 whitespace-normal break-words text-sm">{a.currentaction}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-muted-foreground">Next</div>
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                Details module will be connected here (ticketing / tasks / reminders).
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -231,8 +276,8 @@ export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => v
           <CardTitle className="font-headline">Alertes</CardTitle>
           <CardDescription>Alerts (system + IA). Delay-based severity from Excel field delay_days.</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
+        <CardContent>
+          <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead>Opportunity</TableHead>
@@ -240,24 +285,55 @@ export function SalesDataView({ onNewOpportunity }: { onNewOpportunity?: () => v
                 <TableHead>Current action</TableHead>
                 <TableHead className="text-right">Delay (days)</TableHead>
                 <TableHead>Severity</TableHead>
+                <TableHead className="w-[140px] text-right">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAlerts.map((a: SalesAlertRow, idx: number) => {
+                const key = `${a.opportunityname}-${idx}`;
+                const open = expandedAlerts.has(key);
                 const rag = ragFromDelay(a.delay_days);
                 return (
-                  <TableRow key={`${a.opportunityname}-${idx}`}>
-                    <TableCell className="font-medium">{a.opportunityname}</TableCell>
-                    <TableCell><OwnerCell name={a.salesowner} /></TableCell>
-                    <TableCell className="max-w-[520px] truncate">{a.currentaction}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{a.delay_days}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className={`h-2 w-2 rounded-full ${rag.dot}`} />
-                        {rag.label}
-                      </span>
-                    </TableCell>
-                  </TableRow>
+                  <React.Fragment key={key}>
+                    <TableRow>
+                      <TableCell className="font-medium whitespace-normal break-words">{a.opportunityname}</TableCell>
+                      <TableCell className="whitespace-normal break-words"><OwnerCell name={a.salesowner} /></TableCell>
+                      <TableCell className="whitespace-normal break-words">
+                        <span className="line-clamp-2">{a.currentaction}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">{a.delay_days}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-2 text-sm">
+                          <span className={`h-2 w-2 rounded-full ${rag.dot}`} />
+                          {rag.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => toggle(setExpandedAlerts, key)}>
+                          {open ? 'Hide' : 'Details'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+
+                    {open && (
+                      <TableRow className="bg-muted/20">
+                        <TableCell colSpan={6} className="p-4">
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <div className="text-xs font-semibold text-muted-foreground">Alert reason</div>
+                              <div className="mt-1 whitespace-normal break-words text-sm">{a.currentaction}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-muted-foreground">Next</div>
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                Details module will be connected here (notifications / tasks / workflow).
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </TableBody>

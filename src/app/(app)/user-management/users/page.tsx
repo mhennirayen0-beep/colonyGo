@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PlusCircle, ShieldAlert } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api-client';
 import { useAbility } from '@/lib/ability';
-import { getLocalRoles, SYSTEM_ROLE_NAMES } from '@/lib/role-store';
+import { listRoles, SYSTEM_ROLE_NAMES } from '@/lib/role-store';
 
 type UserRow = {
   id: string;
@@ -41,6 +41,7 @@ export default function UserManagementPage() {
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [roleOptions, setRoleOptions] = useState<string[]>([...SYSTEM_ROLE_NAMES]);
 
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -48,11 +49,17 @@ export default function UserManagementPage() {
   const [password, setPassword] = useState('');
   const [roleName, setRoleName] = useState('sales');
 
-  const roleOptions = useMemo(() => {
-    const local = getLocalRoles().map((r) => r.name);
-    const all = Array.from(new Set([...SYSTEM_ROLE_NAMES, ...local].map((x) => String(x).toLowerCase())));
-    return all;
-  }, []);
+  const loadRoles = async () => {
+    try {
+      const items = await listRoles();
+      const fromApi = items.map((r) => r.name);
+      const all = Array.from(new Set([...SYSTEM_ROLE_NAMES, ...fromApi].map((x) => String(x).toLowerCase())));
+      setRoleOptions(all);
+    } catch {
+      // If the current user can't view roles, keep only system roles.
+      setRoleOptions(Array.from(new Set([...SYSTEM_ROLE_NAMES].map((x) => String(x).toLowerCase()))));
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -69,6 +76,7 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     if (!canManage) return;
+    loadRoles();
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManage]);

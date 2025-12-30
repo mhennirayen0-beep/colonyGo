@@ -1,12 +1,24 @@
 import type { Opportunity, RagStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-export const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
+export const formatCurrency = (value: number, currency: string = 'EUR') =>
+  new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(Number(value ?? 0));
+
+export const getOpportunityCurrency = (o: Pick<Opportunity, 'currency'>) =>
+  (o.currency || 'EUR').toUpperCase();
+
+/**
+ * If all opportunities share the same currency, return it.
+ * Otherwise returns undefined (mixed currencies).
+ */
+export function commonCurrency(opps: Array<Pick<Opportunity, 'currency'>>) {
+  const set = new Set(opps.map((o) => getOpportunityCurrency(o)));
+  return set.size === 1 ? Array.from(set)[0] : undefined;
+}
 
 export const phaseVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   Prospection: 'outline',

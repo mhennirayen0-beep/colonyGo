@@ -56,6 +56,7 @@ export function CustomerDialog({
 }: CustomerDialogProps) {
   const { toast } = useToast();
   const ability = useAbility();
+  const canSave = customer ? ability.can('update', 'Customer') : ability.can('create', 'Customer');
   const [saving, setSaving] = useState(false);
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -83,8 +84,14 @@ export function CustomerDialog({
   }, [customer, form, open]);
 
   const onSubmit = async (values: CustomerFormValues) => {
-    if (customer && !ability.can('update', 'Customer')) return;
-    if (!customer && !ability.can('create', 'Customer')) return;
+    if (customer && !ability.can('update', 'Customer')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to edit customers.', variant: 'destructive' });
+      return;
+    }
+    if (!customer && !ability.can('create', 'Customer')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to create customers.', variant: 'destructive' });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -172,13 +179,18 @@ export function CustomerDialog({
                 </FormItem>
               )}
             />
-          <DialogFooter className="pt-6">
+          {!canSave ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                You don't have permission to {customer ? 'edit' : 'create'} customers.
+              </div>
+            ) : null}
+<DialogFooter className="pt-6">
             <DialogClose asChild>
               <Button type="button" variant="outline">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" variant="accent" disabled={saving}>
+            <Button type="submit" variant="accent" disabled={saving || !canSave}>
               {saving ? 'Saving…' : 'Save Customer'}
             </Button>
           </DialogFooter>

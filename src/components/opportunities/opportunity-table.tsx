@@ -29,14 +29,13 @@ import {
 } from "../ui/dropdown-menu";
 import type { Opportunity } from "@/lib/types";
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
+const formatCurrency = (value: number, currency: string = 'EUR') =>
+  new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(value);
-};
 
 const phaseVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
   Prospection: "outline",
@@ -81,7 +80,7 @@ export function OpportunityTable({ onEdit }: OpportunityTableProps) {
               <TableRow key={opp.id}>
                 <TableCell className="font-medium">{opp.opportunityname}</TableCell>
                 <TableCell>{opp.customername}</TableCell>
-                <TableCell className="text-right">{formatCurrency(opp.value_forecast)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(opp.value_forecast, (opp.currency || 'EUR').toUpperCase())}</TableCell>
                 <TableCell>
                   <Badge variant={phaseVariant[opp.opportunityphase]}>
                     {opp.opportunityphase}

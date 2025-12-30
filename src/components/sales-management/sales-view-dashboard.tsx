@@ -10,7 +10,7 @@ import { VolumeByCategoryChart } from './volume-by-category-chart';
 import { WorkloadChart } from './workload-chart';
 import { WonLostBalanceChart } from './won-lost-balance-chart';
 import { SalesCommitteeKanban } from './sales-kanban';
-import { formatCurrency } from './sales-utils';
+import { commonCurrency, formatCurrency } from './sales-utils';
 
 type Props = {
   opportunities: Opportunity[];
@@ -39,6 +39,10 @@ export function SalesViewDashboard({ opportunities, alerts }: Props) {
   const won = filteredOpps.filter((o) => o.opportunitystatut === 'Start').length;
   const lost = filteredOpps.filter((o) => o.opportunitystatut === 'Stop' || o.opportunitystatut === 'Cancelled').length;
   const forecastTotal = filteredOpps.reduce((s, o) => s + (o.value_forecast || 0), 0);
+
+  const currency = useMemo(() => commonCurrency(filteredOpps), [filteredOpps]);
+  const mixedCurrencies = filteredOpps.length > 0 && !currency;
+  const currencyForDisplay = currency ?? 'EUR';
 
   const bubbleData = useMemo(() => {
     const byClient: Record<string, Opportunity[]> = {};
@@ -90,7 +94,9 @@ export function SalesViewDashboard({ opportunities, alerts }: Props) {
         <div>
           <h2 className="font-headline text-2xl font-bold text-primary">Sales Management Dashboard</h2>
           <p className="text-sm text-muted-foreground">
-            Visual analytics & committee view. Forecast total: <span className="font-semibold text-foreground">{formatCurrency(forecastTotal)}</span>
+            Visual analytics & committee view. Forecast total:{' '}
+            <span className="font-semibold text-foreground">{formatCurrency(forecastTotal, currencyForDisplay)}</span>
+            {mixedCurrencies ? <span className="ml-2">(mixed currencies)</span> : null}
           </p>
         </div>
 
@@ -104,7 +110,13 @@ export function SalesViewDashboard({ opportunities, alerts }: Props) {
             <CardDescription>Click a segment to filter the dashboard</CardDescription>
           </CardHeader>
           <CardContent>
-            <PipelineSnake segments={segments} activePhase={phaseFilter} onPick={(p) => setPhaseFilter(p === phaseFilter ? undefined : p)} />
+            <PipelineSnake
+              segments={segments}
+              activePhase={phaseFilter}
+              onPick={(p) => setPhaseFilter(p === phaseFilter ? undefined : p)}
+              currency={currencyForDisplay}
+              mixedCurrencies={mixedCurrencies}
+            />
           </CardContent>
         </Card>
 

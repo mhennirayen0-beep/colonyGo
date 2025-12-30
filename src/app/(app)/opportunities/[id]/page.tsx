@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+
 import { useOpportunitiesStore } from '@/lib/opportunities-store';
 import type { Opportunity } from '@/lib/types';
-import { useCustomers } from '@/hooks/use-customers';
-import { useAbility } from '@/lib/ability';
-import { useToast } from '@/hooks/use-toast';
 import { useCustomers } from '@/hooks/use-customers';
 import { useAbility } from '@/lib/ability';
 import { useToast } from '@/hooks/use-toast';
@@ -35,10 +33,10 @@ import {
 import { OpportunityDialog } from '@/components/opportunities/opportunity-dialog';
 import { OpportunityNotes } from '@/components/opportunities/opportunity-notes';
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
+const formatCurrency = (value: number, currency = 'EUR') =>
+  new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -213,9 +211,12 @@ export default function OpportunityDetailPage() {
               <CardTitle className="font-headline flex items-center gap-2"><BarChart3 className="h-5 w-5" /> Snapshot</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoRow label="Total Price" value={formatCurrency(computed?.totalPrice ?? 0)} />
+              <InfoRow label="Total Price" value={formatCurrency(computed?.totalPrice ?? 0, opportunity.currency)} />
               <InfoRow label="Discount Rate" value={`${(computed?.discountRate ?? 0).toFixed(1)}%`} />
-              <InfoRow label="Final vs Forecast" value={`${computed?.winGap! >= 0 ? '+' : ''}${formatCurrency(computed?.winGap ?? 0)}`} />
+              <InfoRow
+                label="Final vs Forecast"
+                value={`${computed?.winGap! >= 0 ? '+' : ''}${formatCurrency(computed?.winGap ?? 0, opportunity.currency)}`}
+              />
               <InfoRow label="SWOT Avg" value={`${(computed?.swotAvg ?? 0).toFixed(1)}/5`} />
             </CardContent>
           </Card>
@@ -226,12 +227,12 @@ export default function OpportunityDetailPage() {
               <CardTitle className="font-headline">Value Chain</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-6 md:grid-cols-3">
-              <InfoCard icon={DollarSign} title="Forecast Value" value={formatCurrency(opportunity.value_forecast)} />
-              <InfoCard icon={DollarSign} title="Final Value" value={formatCurrency(opportunity.value_final)} />
-              <InfoCard icon={DollarSign} title="Discount" value={formatCurrency(opportunity.value_discount)} />
-              <InfoCard icon={DollarSign} title="Budget" value={formatCurrency(opportunity.value_budget)} />
-              <InfoCard icon={DollarSign} title="Customer Value" value={formatCurrency(opportunity.value_customer)} />
-              <InfoCard icon={DollarSign} title="Bonus" value={formatCurrency(opportunity.value_bonus)} />
+              <InfoCard icon={DollarSign} title="Forecast Value" value={formatCurrency(opportunity.value_forecast, opportunity.currency)} />
+              <InfoCard icon={DollarSign} title="Final Value" value={formatCurrency(opportunity.value_final, opportunity.currency)} />
+              <InfoCard icon={DollarSign} title="Discount" value={formatCurrency(opportunity.value_discount, opportunity.currency)} />
+              <InfoCard icon={DollarSign} title="Budget" value={formatCurrency(opportunity.value_budget, opportunity.currency)} />
+              <InfoCard icon={DollarSign} title="Customer Value" value={formatCurrency(opportunity.value_customer, opportunity.currency)} />
+              <InfoCard icon={DollarSign} title="Bonus" value={formatCurrency(opportunity.value_bonus, opportunity.currency)} />
             </CardContent>
           </Card>
 
@@ -270,6 +271,16 @@ export default function OpportunityDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <InfoCard icon={Briefcase} title="Client" value={customer?.name || opportunity.customername || 'N/A'} />
+              <InfoCard
+                icon={Briefcase}
+                title="Company"
+                value={opportunity.companyname || opportunity.companyid || '—'}
+              />
+              <InfoCard
+                icon={User}
+                title="Contact"
+                value={opportunity.contactname || opportunity.contactid || '—'}
+              />
               <Separator />
               <InfoCard
                 icon={User}
@@ -309,13 +320,13 @@ export default function OpportunityDetailPage() {
               <CardTitle className="font-headline">Price Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <InfoRow label="Hardware" value={formatCurrency(opportunity.hardware_price)} />
-              <InfoRow label="Software" value={formatCurrency(opportunity.software_price)} />
-              <InfoRow label="Service" value={formatCurrency(opportunity.service_price)} />
+              <InfoRow label="Hardware" value={formatCurrency(opportunity.hardware_price, opportunity.currency)} />
+              <InfoRow label="Software" value={formatCurrency(opportunity.software_price, opportunity.currency)} />
+              <InfoRow label="Service" value={formatCurrency(opportunity.service_price, opportunity.currency)} />
               <Separator />
               <InfoRow
                 label="Total"
-                value={<span className="text-base font-bold">{formatCurrency(computed?.totalPrice ?? 0)}</span>}
+                value={<span className="text-base font-bold">{formatCurrency(computed?.totalPrice ?? 0, opportunity.currency)}</span>}
               />
             </CardContent>
           </Card>

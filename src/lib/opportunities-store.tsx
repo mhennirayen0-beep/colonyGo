@@ -18,6 +18,12 @@ type OpportunitiesState = {
   loading: boolean;
 };
 
+// We load opportunities for dashboards/analytics. Backend is paginated (max 100 per page),
+// so we fetch multiple pages on initial load to avoid showing only the first 25 rows.
+// Keep a reasonable cap to avoid heavy startup requests on very large datasets.
+const OPPS_PAGE_LIMIT = 100;
+const OPPS_MAX_PAGES = 10; // cap at 1000 rows
+
 type OpportunitiesStore = OpportunitiesState & {
   reloadOpportunities: () => Promise<void>;
   fetchOpportunityById: (id: string) => Promise<Opportunity | undefined>;
@@ -33,12 +39,18 @@ const Ctx = createContext<OpportunitiesStore | null>(null);
 
 function mapOpportunity(doc: any): Opportunity {
   return {
+    // Backend returns `id` + `createdAtISO`, but we accept older shapes too.
     id: String(doc?.opportunityId ?? doc?.id ?? ''),
-    createdAtISO: doc?.createdAt ? String(doc.createdAt) : new Date().toISOString(),
+    createdAtISO: String(doc?.createdAtISO ?? doc?.createdAt ?? new Date().toISOString()),
+    currency: String(doc?.currency ?? 'EUR'),
     opportunityname: String(doc?.opportunityName ?? doc?.opportunityname ?? ''),
     opportunitydescription: String(doc?.opportunityDescription ?? doc?.opportunitydescription ?? ''),
     customerid: String(doc?.customerId ?? doc?.customerid ?? ''),
     customername: String(doc?.customerName ?? doc?.customername ?? doc?.customerId ?? ''),
+    companyid: String(doc?.companyId ?? doc?.companyid ?? '') || undefined,
+    companyname: String(doc?.companyName ?? doc?.companyname ?? '') || undefined,
+    contactid: String(doc?.contactId ?? doc?.contactid ?? '') || undefined,
+    contactname: String(doc?.contactName ?? doc?.contactname ?? '') || undefined,
     opportunitystatut: (doc?.statut ?? doc?.opportunitystatut ?? 'Forecast') as any,
     opportunityphase: (doc?.phase ?? doc?.opportunityphase ?? 'Prospection') as any,
     hardware_price: Number(doc?.hardwarePrice ?? doc?.hardware_price ?? 0),
@@ -60,36 +72,47 @@ function mapOpportunity(doc: any): Opportunity {
 }
 
 function toCreatePayload(patch: Partial<Opportunity>) {
+  // IMPORTANT: backend DTOs are snake_case + strict ValidationPipe (forbidNonWhitelisted)
+  // So we must send the exact field names.
   return {
-    opportunityName: patch.opportunityname,
-    opportunityDescription: patch.opportunitydescription,
-    customerId: patch.customerid,
-    statut: patch.opportunitystatut,
-    phase: patch.opportunityphase,
-    hardwarePrice: patch.hardware_price,
-    softwarePrice: patch.software_price,
-    servicePrice: patch.service_price,
-    opportunityOwner: patch.opportunityowner,
-    swotStrength: patch.swot_strength,
-    swotWeakness: patch.swot_weakness,
-    swotOpportunities: patch.swot_opportunities,
-    swotThreats: patch.swot_threats,
-    valueForecast: patch.value_forecast,
-    valueFinal: patch.value_final,
-    valueDiscount: patch.value_discount,
-    valueBudget: patch.value_budget,
-    valueCustomer: patch.value_customer,
-    valueBonus: patch.value_bonus,
-    opportunityScl: patch.opportunityscl,
+    opportunityname: patch.opportunityname,
+    opportunitydescription: patch.opportunitydescription,
+    customerid: patch.customerid,
+    customername: patch.customername,
+    companyid: patch.companyid,
+    companyname: patch.companyname,
+    contactid: patch.contactid,
+    contactname: patch.contactname,
+    opportunitystatut: patch.opportunitystatut,
+    opportunityphase: patch.opportunityphase,
+    hardware_price: patch.hardware_price,
+    software_price: patch.software_price,
+    service_price: patch.service_price,
+    opportunityowner: patch.opportunityowner,
+    swot_strength: patch.swot_strength,
+    swot_weakness: patch.swot_weakness,
+    swot_opportunities: patch.swot_opportunities,
+    swot_threats: patch.swot_threats,
+    value_forecast: patch.value_forecast,
+    value_final: patch.value_final,
+    value_discount: patch.value_discount,
+    value_budget: patch.value_budget,
+    value_customer: patch.value_customer,
+    value_bonus: patch.value_bonus,
+    opportunityscl: patch.opportunityscl,
+    currency: patch.currency ?? 'EUR',
+    // Optional custom id support (backend expects `id`)
+    id: patch.id,
   };
 }
 
 function mapNote(doc: any): OpportunityNote {
   return {
-    id: String(doc?.noteId ?? doc?.id ?? doc?._id ?? ''),
+    id: String(doc?.id ?? doc?.noteId ?? doc?._id ?? ''),
     opportunityId: String(doc?.opportunityId ?? ''),
     text: String(doc?.text ?? ''),
-    createdAtISO: doc?.createdAt ? String(doc.createdAt) : new Date().toISOString(),
+    // Backend returns `createdAtISO`. We also accept older shapes.
+    createdAtISO: String(doc?.createdAtISO ?? doc?.createdAt ?? new Date().toISOString()),
     source: (doc?.source ?? 'user') as any,
   };
 }
@@ -102,9 +125,25 @@ export function OpportunitiesProvider({ children }: { children: React.ReactNode 
   const reloadOpportunities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<any>('/opportunities');
-      const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-      setOpportunities(items.map(mapOpportunity));
+      const all: any[] = [];
+      for (let page = 1; page <= OPPS_MAX_PAGES; page++) {
+        const res = await api.get<any>(`/opportunities?page=${page}&limit=${OPPS_PAGE_LIMIT}`);
+
+        const items = Array.isArray(res?.items)
+          ? res.items
+          : Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res)
+              ? res
+              : [];
+
+        all.push(...items);
+
+        const meta = res?.meta;
+        const hasNext = typeof meta?.hasNext === 'boolean' ? meta.hasNext : items.length === OPPS_PAGE_LIMIT;
+        if (!hasNext) break;
+      }
+      setOpportunities(all.map(mapOpportunity));
     } finally {
       setLoading(false);
     }
@@ -157,7 +196,13 @@ export function OpportunitiesProvider({ children }: { children: React.ReactNode 
 
   const loadNotesForOpportunity = useCallback(async (opportunityId: string) => {
     const res = await api.get<any>(`/notes?opportunityId=${encodeURIComponent(opportunityId)}`);
-    const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+    const items = Array.isArray(res?.items)
+      ? res.items
+      : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : [];
     const mapped = items.map(mapNote);
     setNotesByOpportunityId((prev) => ({ ...prev, [opportunityId]: mapped }));
     return mapped;

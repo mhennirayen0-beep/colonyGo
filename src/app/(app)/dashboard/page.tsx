@@ -9,12 +9,12 @@ import { useDashboardSummary } from '@/hooks/use-dashboard-summary';
 import { useOpportunitiesStore } from '@/lib/opportunities-store';
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'EUR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value ?? 0);
+  }).format(Number(value ?? 0));
 }
 
 export default function DashboardPage() {

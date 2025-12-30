@@ -5,6 +5,7 @@ import { PlusCircle } from "lucide-react";
 import { ProductTable } from "@/components/products/product-table";
 import { ProductDialog } from "@/components/products/product-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/types";
 import { useProducts } from '@/hooks/use-products';
 import { useAbility } from '@/lib/ability';
@@ -13,7 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 export default function ProductsPage() {
   const { toast } = useToast();
   const ability = useAbility();
-  const { products, loading, error, createProduct, updateProduct, deleteProduct } = useProducts();
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const { products, meta, loading, error, createProduct, updateProduct, deleteProduct } = useProducts({
+    q: q.trim() || undefined,
+    page,
+    limit,
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -35,6 +44,15 @@ export default function ProductsPage() {
     setDialogOpen(true);
   };
 
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!ability.can('delete', 'Product')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to delete products.', variant: 'destructive' });
+      return;
+    }
+    await deleteProduct(id);
+  };
+
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedProduct(null);
@@ -52,12 +70,47 @@ export default function ProductsPage() {
         </Button>
       </div>
 
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="max-w-md">
+          <Input
+            placeholder="Search products (name, type…)"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          Page <span className="font-medium text-foreground">{meta?.page ?? page}</span>
+          {meta?.total != null ? (
+            <> • Total <span className="font-medium text-foreground">{meta.total}</span></>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={loading || (meta?.page ?? page) <= 1}
+          >
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={loading || meta?.hasNext === false}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
       <ProductTable
         products={products}
         loading={loading}
         error={error}
         onEdit={handleEditProduct}
-        onDelete={(p) => deleteProduct(p.id)}
+        onDelete={(p) => handleDeleteProduct(p.id)}
       />
 
       <ProductDialog

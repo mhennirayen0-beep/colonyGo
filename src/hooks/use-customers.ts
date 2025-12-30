@@ -17,8 +17,22 @@ function mapCustomer(doc: any): Customer {
   };
 }
 
-export function useCustomers() {
+type UseCustomersOptions = {
+  q?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type PageMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  hasNext: boolean;
+};
+
+export function useCustomers(options: UseCustomersOptions = {}) {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [meta, setMeta] = useState<PageMeta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,15 +40,40 @@ export function useCustomers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<any>('/customers');
-      const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+      const params = new URLSearchParams();
+      if (options.q) params.set('q', options.q);
+      if (typeof options.page === 'number') params.set('page', String(options.page));
+      if (typeof options.limit === 'number') params.set('limit', String(options.limit));
+
+      const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
+      const res = await api.get<any>(url);
+      const items = Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
       setCustomers(items.map(mapCustomer));
+
+      const m = res?.meta;
+      if (m && typeof m === 'object') {
+        setMeta({
+          page: Number(m.page ?? options.page ?? 1),
+          limit: Number(m.limit ?? options.limit ?? 20),
+          total: Number(m.total ?? items.length),
+          hasNext: Boolean(m.hasNext ?? false),
+        });
+      } else {
+        setMeta(null);
+      }
     } catch (e: any) {
       setError(e?.message ? String(e.message) : 'Failed to load customers');
+      setMeta(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [options.q, options.page, options.limit]);
 
   useEffect(() => {
     load();
@@ -77,6 +116,7 @@ export function useCustomers() {
 
   return {
     customers,
+    meta,
     loading,
     error,
     reload: load,

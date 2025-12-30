@@ -11,6 +11,8 @@ export type SalesPeriod = 'all' | '7d' | '30d' | '90d';
 export type SalesFilters = {
   owner?: string;
   client?: string;
+  company?: string;
+  contact?: string;
   query?: string;
   period?: SalesPeriod;
 };
@@ -18,18 +20,22 @@ export type SalesFilters = {
 type Props = {
   owners: string[];
   clients: string[];
+  companies?: string[];
+  contacts?: string[];
   value: SalesFilters;
   onChange: (next: SalesFilters) => void;
   className?: string;
 };
 
-export function SalesFiltersBar({ owners, clients, value, onChange, className }: Props) {
+export function SalesFiltersBar({ owners, clients, companies, contacts, value, onChange, className }: Props) {
   const ownerItems = useMemo(() => ['All', ...owners], [owners]);
   const clientItems = useMemo(() => ['All', ...clients], [clients]);
+  const companyItems = useMemo(() => (companies && companies.length ? ['All', ...companies] : []), [companies]);
+  const contactItems = useMemo(() => (contacts && contacts.length ? ['All', ...contacts] : []), [contacts]);
 
   return (
     <div className={cn('grid gap-3 rounded-2xl border bg-card p-4 shadow-sm', className)}>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
         <div className="space-y-1.5">
           <Label>Search</Label>
           <Input
@@ -94,6 +100,48 @@ export function SalesFiltersBar({ owners, clients, value, onChange, className }:
             </SelectContent>
           </Select>
         </div>
+
+        {companyItems.length ? (
+          <div className="space-y-1.5">
+            <Label>Company</Label>
+            <Select
+              value={value.company ?? 'All'}
+              onValueChange={(v) => onChange({ ...value, company: v === 'All' ? undefined : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {companyItems.map((x) => (
+                  <SelectItem key={x} value={x}>
+                    {x}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+
+        {contactItems.length ? (
+          <div className="space-y-1.5">
+            <Label>Contact</Label>
+            <Select
+              value={value.contact ?? 'All'}
+              onValueChange={(v) => onChange({ ...value, contact: v === 'All' ? undefined : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {contactItems.map((x) => (
+                  <SelectItem key={x} value={x}>
+                    {x}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
       </div>
 
       <div className="text-xs text-muted-foreground">

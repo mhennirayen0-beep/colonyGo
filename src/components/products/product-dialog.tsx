@@ -61,6 +61,7 @@ export function ProductDialog({
 }: ProductDialogProps) {
   const { toast } = useToast();
   const ability = useAbility();
+  const canSave = product ? ability.can('update', 'Product') : ability.can('create', 'Product');
   const [saving, setSaving] = useState(false);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -81,8 +82,14 @@ export function ProductDialog({
   }, [product, form, open]);
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (product && !ability.can('update', 'Product')) return;
-    if (!product && !ability.can('create', 'Product')) return;
+    if (product && !ability.can('update', 'Product')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to edit products.', variant: 'destructive' });
+      return;
+    }
+    if (!product && !ability.can('create', 'Product')) {
+      toast({ title: 'Not allowed', description: 'You do not have permission to create products.', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
       if (product) await onUpdate(product.id, values);
@@ -154,7 +161,7 @@ export function ProductDialog({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price (USD)</FormLabel>
+                  <FormLabel>Price (EUR)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g., 15000" {...field} />
                   </FormControl>
@@ -162,13 +169,18 @@ export function ProductDialog({
                 </FormItem>
               )}
             />
-          <DialogFooter className="pt-6">
+          {!canSave ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              You don't have permission to {product ? 'edit' : 'create'} products.
+            </div>
+          ) : null}
+<DialogFooter className="pt-6">
             <DialogClose asChild>
               <Button type="button" variant="outline">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" variant="accent" disabled={saving}>{saving ? 'Saving…' : 'Save Product'}</Button>
+            <Button type="submit" variant="accent" disabled={saving || !canSave}>{saving ? 'Saving…' : 'Save Product'}</Button>
           </DialogFooter>
           </form>
         </Form>

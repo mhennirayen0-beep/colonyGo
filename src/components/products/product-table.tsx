@@ -34,14 +34,13 @@ interface ProductTableProps {
   error?: string | null;
 }
 
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 
 export function ProductTable({ products, onEdit, onDelete, loading, error }: ProductTableProps) {
   const ability = useAbility();

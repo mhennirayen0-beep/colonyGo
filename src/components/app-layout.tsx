@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { MainNav } from "@/components/main-nav";
@@ -14,14 +12,16 @@ import { HelpCircle, Menu, MessageSquare, Search } from "lucide-react";
 import { GyneAIBar } from "@/components/ai/gyneai-bar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { SalesModeToggle } from "@/components/sales-management/sales-mode-toggle";
-import { SalesSectionToggle } from "@/components/sales-management/sales-section-toggle";
-import { useSearchParams } from "next/navigation";
+import { ModuleMenuTrigger } from "@/components/module-menu";
+import { useAbility } from "@/lib/ability";
+import { getScreenByPathname } from "@/config/screens";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 
 function Header() {
   const { toggleSidebar } = useSidebar();
   const pathname = usePathname();
-  const sp = useSearchParams();
-  const tab = (sp.get("tab") ?? "sales") === "crm" ? "crm" : "sales";
+  const onSales = pathname.startsWith("/opportunities") || pathname.startsWith("/crm");
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -46,9 +46,9 @@ function Header() {
         />
       </div>
       <div className="hidden flex-1 justify-center md:flex">
-        {pathname.startsWith("/opportunities") ? (
+        {onSales ? (
           <div className="flex items-center gap-3">
-            {tab === "sales" && <SalesModeToggle />}
+            <SalesModeToggle />
           </div>
         ) : (
           <h1 className="font-headline text-lg font-semibold text-primary">
@@ -73,30 +73,17 @@ function Header() {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { state } = useSidebar();
+  const ability = useAbility();
+  const pathname = usePathname();
+
+  const screen = getScreenByPathname(pathname);
+  const canView = !screen || ability.can('view', screen.subject);
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
       <Sidebar>
         <SidebarHeader>
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white">
-              <Image
-                src="/brand/colonygo-logo.png"
-                alt="ColonyGo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div
-              className={cn("leading-tight", state === "collapsed" && "hidden")}
-            >
-              <div className="font-headline text-base font-semibold text-sidebar-foreground">
-                ColonyGo
-              </div>
-              <div className="text-xs text-sidebar-foreground/80">ERP</div>
-            </div>
-          </Link>
+          <ModuleMenuTrigger />
         </SidebarHeader>
         <MainNav />
       </Sidebar>
@@ -110,7 +97,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Header />
         {/* Add extra bottom padding so content doesn't hide behind fixed GyneAI bar */}
         <main className="flex-1 overflow-y-auto p-4 pb-36 sm:p-6 sm:pb-24">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+          <div className="mx-auto w-full max-w-7xl">
+            {canView ? (
+              children
+            ) : (
+              <Card className="rounded-2xl shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-headline flex items-center gap-2">
+                    <ShieldAlert className="h-5 w-5" /> Not allowed
+                  </CardTitle>
+                  <CardDescription>
+                    You don&apos;t have permission to view <span className="font-medium">{screen?.label ?? 'this page'}</span>.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+          </div>
         </main>
       </div>
 
